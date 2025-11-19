@@ -19,7 +19,8 @@ string User::decryptPassword(const string& encrypted) {
 }
 
 // Constructors
-User::User() : id(0), role(Role::Reader) {}
+// Default constructor
+User::User() : id(0), role(Role::User) {}
 
 User::User(int id, const string& name, const string& email, const string& password,
            const string& phoneNumber, Role role)
@@ -63,7 +64,7 @@ string User::getEncryptedPassword() const {
 // Utility functions
 string User::roleToString() const {
     switch (role) {
-        case Role::Reader: return "Reader";
+        case Role::User: return "User";
         case Role::Librarian: return "Librarian";
         case Role::Admin: return "Admin";
         default: return "Unknown";
@@ -73,7 +74,7 @@ string User::roleToString() const {
 Role User::stringToRole(const string& roleStr) {
     if (roleStr == "Librarian") return Role::Librarian;
     if (roleStr == "Admin") return Role::Admin;
-    return Role::Reader;
+    return Role::User;
 }
 
 // Display user information

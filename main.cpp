@@ -6,6 +6,7 @@
 // - Quản lý Library, User, Order, Reservation, BookRequest
 
 #include <iostream>
+#include <fstream>
 #include <limits>
 #include <string>
 #include <vector>
@@ -32,6 +33,147 @@ vector<BookRequest> bookRequests;  // Danh sách yêu cầu sách
 int nextOrderId = 1;               // ID tiếp theo cho Order
 int nextReservationId = 1;         // ID tiếp theo cho Reservation
 int nextRequestId = 1;             // ID tiếp theo cho BookRequest
+
+// ===== AUTO-SAVE FUNCTION =====
+// Tự động lưu dữ liệu sau mỗi thao tác để tránh mất data
+void autoSave(Library& library, UserService& userService) {
+    library.saveToFile("books.txt");
+    userService.saveToFile("users.txt");
+    
+    // Save orders
+    ofstream ordersFile("orders.txt");
+    if (ordersFile.is_open()) {
+        for (const Order& order : orders) {
+            ordersFile << order.getOrderId() << "|"
+                      << order.getUserId() << "|"
+                      << order.getBookId() << "|"
+                      << order.getStatus() << "|"
+                      << order.getBorrowDate() << "|"
+                      << order.getIssueDate() << "|"
+                      << order.getDueDate() << "|"
+                      << order.getReturnDate() << "|"
+                      << order.getRenewalPeriod() << "|"
+                      << order.getBookCondition() << "\n";
+        }
+        ordersFile.close();
+    }
+    
+    // Save reservations
+    ofstream reservationsFile("reservations.txt");
+    if (reservationsFile.is_open()) {
+        for (const Reservation& res : reservations) {
+            reservationsFile << res.getReservationId() << "|"
+                           << res.getUserId() << "|"
+                           << res.getBookId() << "|"
+                           << res.statusToString() << "|"
+                           << res.getReservationDate() << "\n";
+        }
+        reservationsFile.close();
+    }
+    
+    // Save book requests
+    ofstream requestsFile("bookrequests.txt");
+    if (requestsFile.is_open()) {
+        for (const BookRequest& req : bookRequests) {
+            requestsFile << req.getRequestId() << "|"
+                        << req.getUserId() << "|"
+                        << req.getBookTitle() << "|"
+                        << req.getBookAuthor() << "|"
+                        << req.statusToString() << "|"
+                        << req.getRequestDate() << "\n";
+        }
+        requestsFile.close();
+    }
+}
+
+// ===== LOAD DATA FUNCTIONS =====
+// Load orders từ file
+void loadOrders() {
+    ifstream ordersFile("orders.txt");
+    if (ordersFile.is_open()) {
+        string line;
+        while (getline(ordersFile, line)) {
+            stringstream ss(line);
+            string orderId, userId, bookId, status, borrowDate, issueDate, dueDate, returnDate, bookCondition;
+            int renewalPeriod;
+            
+            getline(ss, orderId, '|');
+            getline(ss, userId, '|');
+            getline(ss, bookId, '|');
+            getline(ss, status, '|');
+            getline(ss, borrowDate, '|');
+            getline(ss, issueDate, '|');
+            getline(ss, dueDate, '|');
+            getline(ss, returnDate, '|');
+            ss >> renewalPeriod;
+            ss.ignore(1, '|');
+            getline(ss, bookCondition);
+            
+            Order order(orderId, userId, bookId, status, borrowDate, issueDate, dueDate, returnDate, renewalPeriod, bookCondition);
+            orders.push_back(order);
+            
+            // Update nextOrderId
+            int id = stoi(orderId.substr(1));
+            if (id >= nextOrderId) nextOrderId = id + 1;
+        }
+        ordersFile.close();
+    }
+}
+
+// Load reservations từ file
+void loadReservations() {
+    ifstream reservationsFile("reservations.txt");
+    if (reservationsFile.is_open()) {
+        string line;
+        while (getline(reservationsFile, line)) {
+            stringstream ss(line);
+            string resId, userId, bookId, statusStr, resDate;
+            
+            getline(ss, resId, '|');
+            getline(ss, userId, '|');
+            getline(ss, bookId, '|');
+            getline(ss, statusStr, '|');
+            getline(ss, resDate);
+            
+            Reservation res(resId, userId, bookId, resDate, "");
+            res.setStatus(Reservation::stringToStatus(statusStr));
+            reservations.push_back(res);
+            
+            // Update nextReservationId
+            int id = stoi(resId.substr(1));
+            if (id >= nextReservationId) nextReservationId = id + 1;
+        }
+        reservationsFile.close();
+    }
+}
+
+// Load book requests từ file
+void loadBookRequests() {
+    ifstream requestsFile("bookrequests.txt");
+    if (requestsFile.is_open()) {
+        string line;
+        while (getline(requestsFile, line)) {
+            stringstream ss(line);
+            string reqId, userId, bookTitle, author, statusStr, reqDate;
+            
+            getline(ss, reqId, '|');
+            getline(ss, userId, '|');
+            getline(ss, bookTitle, '|');
+            getline(ss, author, '|');
+            getline(ss, statusStr, '|');
+            getline(ss, reqDate);
+            
+            BookRequest req(reqId, userId, bookTitle, author, "", reqDate);
+            req.setStatus(BookRequest::stringToStatus(statusStr));
+            bookRequests.push_back(req);
+            
+            // Update nextRequestId
+            int id = stoi(reqId.substr(1));
+            if (id >= nextRequestId) nextRequestId = id + 1;
+        }
+        requestsFile.close();
+    }
+}
 
 // ===== HELPER FUNCTIONS =====
 // Hàm tiện ích chung
@@ -182,6 +324,7 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
             
             // Giảm số sách có sẵn
             book->decreaseAvailableQuantity();
+            autoSave(library, userService);
             
             cout << "Book borrowed successfully!\n";
             cout << "Order ID: " << orderId << "\n";
@@ -219,6 +362,7 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
                         // Gia hạn thêm 14 ngày
                         string newDueDate = calculateDueDate(14);
                         order.setDueDate(newDueDate);
+                        autoSave(library, userService);
                         cout << "Loan renewed successfully!\n";
                         cout << "New due date: " << newDueDate << "\n";
                         found = true;
@@ -259,6 +403,7 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
                         Book* book = library.findBookById(order.getBookId());
                         if (book) {
                             book->increaseAvailableQuantity();
+                            autoSave(library, userService);
                             
                             // Tính phí phạt
                             double fine = order.calculateFine(book->getRentalPrice());
@@ -317,6 +462,7 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
             
             Reservation newReservation(reservationId, userId, bookId, reservationDate, expiryDate);
             reservations.push_back(newReservation);
+            autoSave(library, userService);
             
             cout << "Book reserved successfully!\n";
             cout << "Reservation ID: " << reservationId << "\n";
@@ -353,6 +499,7 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
             
             BookRequest newRequest(requestId, userId, title, author, isbn, requestDate, reason);
             bookRequests.push_back(newRequest);
+            autoSave(library, userService);
             
             cout << "Book request submitted successfully!\n";
             cout << "Request ID: " << requestId << "\n";
@@ -386,6 +533,7 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
                     
                     if (request.getStatus() == RequestStatus::Pending) {
                         request.cancelRequest();
+                        autoSave(library, userService);
                         cout << "Request cancelled successfully!\n";
                         found = true;
                     } else {
@@ -412,6 +560,7 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
             string phone = prompt("Phone Number: ");
             
             if (userService.updateUserProfile(currentUser->getId(), name, email, phone)) {
+                autoSave(library, userService);
                 cout << "Profile updated successfully!\n";
             } else {
                 cout << "Failed to update profile.\n";
@@ -424,6 +573,7 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
             string newPassword = prompt("New password: ");
             
             if (userService.changePassword(currentUser->getId(), oldPassword, newPassword)) {
+                autoSave(library, userService);
                 cout << "Password changed successfully!\n";
             } else {
                 cout << "Failed to change password. Check your old password.\n";
@@ -454,27 +604,12 @@ void librarianMenu(User* currentUser, Library &library, UserService &userService
     bool running = true;
     while (running) {
         cout << "\n========== LIBRARIAN MENU (" << currentUser->getName() << ") ==========\n";
-        cout << "--- Book Management ---\n";
-        cout << "1. Add new book\n";
-        cout << "2. Update book\n";
-        cout << "3. Remove book\n";
-        cout << "4. View all books\n";
-        cout << "5. Search books\n";
-        cout << "\n--- Borrowing Management ---\n";
-        cout << "6. Issue book to user\n";
-        cout << "7. Process book return\n";
-        cout << "8. View all active loans\n";
-        cout << "9. View overdue loans\n";
-        cout << "\n--- Request Management ---\n";
-        cout << "10. View pending book requests\n";
-        cout << "11. Approve book request\n";
-        cout << "12. Reject book request\n";
-        cout << "\n--- Reports ---\n";
-        cout << "13. Generate borrowing report\n";
-        cout << "14. Generate inventory report\n";
-        cout << "\n--- Personal ---\n";
-        cout << "15. View my profile\n";
-        cout << "16. Access Reader features\n";
+        cout << "1. Manage Books\n";
+        cout << "2. Manage Loans\n";
+        cout << "3. Manage Requests\n";
+        cout << "4. Generate Reports\n";
+        cout << "5. Access User Features\n";
+        cout << "6. My Profile\n";
         cout << "0. Logout\n";
         cout << "Enter choice: ";
         
@@ -483,320 +618,340 @@ void librarianMenu(User* currentUser, Library &library, UserService &userService
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
         switch (choice) {
-        case 1: { // Thêm sách mới
-            string title = prompt("Title: ");
-            string author = prompt("Author: ");
-            string publisher = prompt("Publisher: ");
+        case 1: { // Quản lý sách
+            cout << "\n--- Manage Books ---\n";
+            cout << "1. Add new book\n";
+            cout << "2. Update book\n";
+            cout << "3. Remove book\n";
+            cout << "4. View all books\n";
+            cout << "5. Search books\n";
+            cout << "0. Back\n";
+            cout << "Choice: ";
             
-            cout << "Publication year: ";
-            int year;
-            cin >> year;
+            int subChoice;
+            cin >> subChoice;
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             
-            string isbn = prompt("ISBN: ");
-            string category = prompt("Category: ");
-            string keyword = prompt("Keywords (comma separated): ");
-            
-            cout << "Quantity: ";
-            int quantity;
-            cin >> quantity;
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            
-            cout << "Pages: ";
-            int pages;
-            cin >> pages;
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            
-            string briefDesc = prompt("Brief description: ");
-            string detailedDesc = prompt("Detailed description: ");
-            
-            cout << "Rental price: ";
-            double rentalPrice;
-            cin >> rentalPrice;
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            
-            vector<string> categories = {category};
-            vector<string> keywords = {keyword};
-            
-            library.addNewBook(title, author, publisher, year, isbn, categories, keywords, 
-                             quantity, pages, briefDesc, detailedDesc, rentalPrice);
-            
-            cout << "Book added successfully!\n";
-            break;
-        }
-        
-        case 2: { // Cập nhật sách
-            string bookId = prompt("Enter Book ID to update: ");
-            Book* book = library.findBookById(bookId);
-            
-            if (!book) {
-                cout << "Book not found!\n";
-                break;
-            }
-            
-            cout << "\n--- Update Book (leave blank to keep current) ---\n";
-            string title = prompt("Title: ");
-            string author = prompt("Author: ");
-            string publisher = prompt("Publisher: ");
-            
-            // Simplified update - chỉ cập nhật title, author, publisher
-            if (!title.empty() || !author.empty() || !publisher.empty()) {
-                library.updateBook(bookId, 
-                    title.empty() ? book->getTitle() : title,
-                    author.empty() ? book->getAuthor() : author,
-                    publisher.empty() ? book->getPublisher() : publisher,
-                    book->getYearOfPublication(),
-                    book->getCategories(),
-                    book->getKeywords(),
-                    book->getTotalQuantity(),
-                    book->getTotalPages(),
-                    book->getBriefDescription(),
-                    book->getDetailedDescription(),
-                    book->getRentalPrice());
+            if (subChoice == 1) { // Thêm sách mới
+                string title = prompt("Title: ");
+                string author = prompt("Author: ");
+                string publisher = prompt("Publisher: ");
                 
-                cout << "Book updated successfully!\n";
+                cout << "Publication year: ";
+                int year;
+                cin >> year;
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                
+                string isbn = prompt("ISBN: ");
+                string category = prompt("Category: ");
+                string keyword = prompt("Keywords (comma separated): ");
+                
+                cout << "Quantity: ";
+                int quantity;
+                cin >> quantity;
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                
+                cout << "Pages: ";
+                int pages;
+                cin >> pages;
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                
+                string briefDesc = prompt("Brief description: ");
+                string detailedDesc = prompt("Detailed description: ");
+                
+                cout << "Rental price: ";
+                double rentalPrice;
+                cin >> rentalPrice;
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                
+                vector<string> categories = {category};
+                vector<string> keywords = {keyword};
+                
+                library.addNewBook(title, author, publisher, year, isbn, categories, keywords, 
+                                 quantity, pages, briefDesc, detailedDesc, rentalPrice);
+                autoSave(library, userService);
+                cout << "Book added successfully!\n";
+            } else if (subChoice == 2) { // Cập nhật sách
+                string bookId = prompt("Enter Book ID to update: ");
+                Book* book = library.findBookById(bookId);
+                
+                if (!book) {
+                    cout << "Book not found!\n";
+                } else {
+                    cout << "\n--- Update Book (leave blank to keep current) ---\n";
+                    string title = prompt("Title: ");
+                    string author = prompt("Author: ");
+                    string publisher = prompt("Publisher: ");
+                    
+                    if (!title.empty() || !author.empty() || !publisher.empty()) {
+                        library.updateBook(bookId, 
+                            title.empty() ? book->getTitle() : title,
+                            author.empty() ? book->getAuthor() : author,
+                            publisher.empty() ? book->getPublisher() : publisher,
+                            book->getYearOfPublication(),
+                            book->getCategories(),
+                            book->getKeywords(),
+                            book->getTotalQuantity(),
+                            book->getTotalPages(),
+                            book->getBriefDescription(),
+                            book->getDetailedDescription(),
+                            book->getRentalPrice());
+                        autoSave(library, userService);
+                        cout << "Book updated successfully!\n";
+                    }
+                }
+            } else if (subChoice == 3) { // Xóa sách
+                string bookId = prompt("Enter Book ID to remove: ");
+                
+                if (library.removeBook(bookId)) {
+                    autoSave(library, userService);
+                    cout << "Book removed successfully!\n";
+                } else {
+                    cout << "Failed to remove book. Book not found.\n";
+                }
+            } else if (subChoice == 4) { // Xem tất cả sách
+                library.displayAllBooks();
+            } else if (subChoice == 5) { // Tìm kiếm sách
+                cout << "Search by: 1=Title, 2=Author, 3=Keyword: ";
+                int searchChoice;
+                cin >> searchChoice;
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                
+                string query = prompt("Enter search term: ");
+                vector<Book*> results;
+                
+                if (searchChoice == 1) results = library.searchByTitle(query);
+                else if (searchChoice == 2) results = library.searchByAuthor(query);
+                else if (searchChoice == 3) results = library.searchByKeyword(query);
+                
+                cout << "\nFound " << results.size() << " book(s):\n";
+                for (auto bookPtr : results) {
+                    bookPtr->displayBookInfo();
+                    cout << "---\n";
+                }
             }
             break;
         }
         
-        case 3: { // Xóa sách
-            string bookId = prompt("Enter Book ID to remove: ");
+        case 2: { // Quản lý cho mượn/trả
+            cout << "\n--- Manage Loans ---\n";
+            cout << "1. Issue book to user\n";
+            cout << "2. Process book return\n";
+            cout << "3. View all active loans\n";
+            cout << "4. View overdue loans\n";
+            cout << "0. Back\n";
+            cout << "Choice: ";
             
-            if (library.removeBook(bookId)) {
-                cout << "Book removed successfully!\n";
-            } else {
-                cout << "Failed to remove book. Book not found.\n";
-            }
-            break;
-        }
-        
-        case 4: { // Xem tất cả sách
-            library.displayAllBooks();
-            break;
-        }
-        
-        case 5: { // Tìm kiếm sách
-            cout << "Search by: 1=Title, 2=Author, 3=Keyword: ";
-            int searchChoice;
-            cin >> searchChoice;
+            int subChoice;
+            cin >> subChoice;
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             
-            string query = prompt("Enter search term: ");
-            vector<Book*> results;
-            
-            if (searchChoice == 1) results = library.searchByTitle(query);
-            else if (searchChoice == 2) results = library.searchByAuthor(query);
-            else if (searchChoice == 3) results = library.searchByKeyword(query);
-            
-            cout << "\nFound " << results.size() << " book(s):\n";
-            for (auto bookPtr : results) {
-                bookPtr->displayBookInfo();
-                cout << "---\n";
-            }
-            break;
-        }
-        
-        case 6: { // Cho mượn sách
-            string userEmail = prompt("User email: ");
-            User* user = userService.findUserByEmail(userEmail);
-            
-            if (!user) {
-                cout << "User not found!\n";
-                break;
-            }
-            
-            string bookId = prompt("Book ID: ");
-            Book* book = library.findBookById(bookId);
-            
-            if (!book) {
-                cout << "Book not found!\n";
-                break;
-            }
-            
-            if (book->getAvailableQuantity() <= 0) {
-                cout << "Book is not available!\n";
-                break;
-            }
-            
-            string orderId = "ORD" + toString(nextOrderId++);
-            string userId = toString(user->getId());
-            string borrowDate = getCurrentDate();
-            string dueDate = calculateDueDate(14);
-            
-            Order newOrder(orderId, userId, bookId, "ISSUED", borrowDate, borrowDate, dueDate, "", 0, "GOOD");
-            orders.push_back(newOrder);
-            book->decreaseAvailableQuantity();
-            
-            cout << "Book issued successfully!\n";
-            cout << "Order ID: " << orderId << "\n";
-            break;
-        }
-        
-        case 7: { // Xử lý trả sách
-            string orderId = prompt("Enter Order ID: ");
-            bool found = false;
-            
-            for (auto &order : orders) {
-                if (order.getOrderId() == orderId) {
-                    if (order.getStatus() == "ISSUED" || order.getStatus() == "OVERDUE") {
-                        // Hỏi tình trạng sách
-                        cout << "Book condition (1=GOOD, 2=DAMAGED, 3=LOST): ";
-                        int condChoice;
-                        cin >> condChoice;
-                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                        
-                        string condition = (condChoice == 2) ? "DAMAGED" : 
-                                         (condChoice == 3) ? "LOST" : "GOOD";
-                        order.setBookCondition(condition);
-                        order.setReturnDate(getCurrentDate());
-                        order.setStatus("RETURNED");
-                        
-                        Book* book = library.findBookById(order.getBookId());
-                        if (book) {
-                            book->increaseAvailableQuantity();
-                            
-                            // Tính phí phạt
-                            double fine = order.calculateFine(book->getRentalPrice());
-                            double estimatedBookValue = book->getRentalPrice() * 100;
-                            
-                            cout << "\n=== Return Summary ===\n";
-                            cout << "Book return processed successfully!\n";
-                            cout << "Book condition: " << condition << "\n";
-                            
-                            if (fine > 0) {
-                                cout << "--- Fine Details ---\n";
-                                int overdueDays = order.calculateOverdueDays();
-                                if (overdueDays > 0) {
-                                    cout << "Overdue days: " << overdueDays << "\n";
-                                    cout << "Daily fine rate: " << book->getRentalPrice() << " VND\n";
-                                    cout << "Overdue fine: " << (overdueDays * book->getRentalPrice()) << " VND\n";
-                                }
-                                if (condition == "DAMAGED") {
-                                    cout << "Damaged book compensation (50%): " << (estimatedBookValue * 0.5) << " VND\n";
-                                } else if (condition == "LOST") {
-                                    cout << "Lost book compensation (100%): " << estimatedBookValue << " VND\n";
-                                }
-                                cout << "-------------------\n";
-                                cout << "TOTAL FINE: " << fine << " VND\n";
-                            } else {
-                                cout << "No fines. Thank you!\n";
-                            }
-                        }
-                        
-                        found = true;
+            if (subChoice == 1) { // Cho mượn sách
+                string userEmail = prompt("User email: ");
+                User* user = userService.findUserByEmail(userEmail);
+                
+                if (!user) {
+                    cout << "User not found!\n";
+                } else {
+                    string bookId = prompt("Book ID: ");
+                    Book* book = library.findBookById(bookId);
+                    
+                    if (!book) {
+                        cout << "Book not found!\n";
+                    } else if (book->getAvailableQuantity() <= 0) {
+                        cout << "Book is not available!\n";
                     } else {
-                        cout << "Order status: " << order.getStatus() << "\n";
+                        string orderId = "ORD" + toString(nextOrderId++);
+                        string userId = toString(user->getId());
+                        string borrowDate = getCurrentDate();
+                        string dueDate = calculateDueDate(14);
+                        
+                        Order newOrder(orderId, userId, bookId, "ISSUED", borrowDate, borrowDate, dueDate, "", 0, "GOOD");
+                        orders.push_back(newOrder);
+                        book->decreaseAvailableQuantity();
+                        autoSave(library, userService);
+                        
+                        cout << "Book issued successfully!\n";
+                        cout << "Order ID: " << orderId << "\n";
+                    }
+                }
+            } else if (subChoice == 2) { // Xử lý trả sách
+                string orderId = prompt("Enter Order ID: ");
+                bool found = false;
+                
+                for (auto &order : orders) {
+                    if (order.getOrderId() == orderId) {
+                        if (order.getStatus() == "ISSUED" || order.getStatus() == "OVERDUE") {
+                            cout << "Book condition (1=GOOD, 2=DAMAGED, 3=LOST): ";
+                            int condChoice;
+                            cin >> condChoice;
+                            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                            
+                            string condition = (condChoice == 2) ? "DAMAGED" : 
+                                             (condChoice == 3) ? "LOST" : "GOOD";
+                            order.setBookCondition(condition);
+                            order.setReturnDate(getCurrentDate());
+                            order.setStatus("RETURNED");
+                            
+                            Book* book = library.findBookById(order.getBookId());
+                            if (book) {
+                                book->increaseAvailableQuantity();
+                                autoSave(library, userService);
+                                
+                                double fine = order.calculateFine(book->getRentalPrice());
+                                double estimatedBookValue = book->getRentalPrice() * 100;
+                                
+                                cout << "\n=== Return Summary ===\n";
+                                cout << "Book return processed successfully!\n";
+                                cout << "Book condition: " << condition << "\n";
+                                
+                                if (fine > 0) {
+                                    cout << "--- Fine Details ---\n";
+                                    int overdueDays = order.calculateOverdueDays();
+                                    if (overdueDays > 0) {
+                                        cout << "Overdue days: " << overdueDays << "\n";
+                                        cout << "Daily fine rate: " << book->getRentalPrice() << " VND\n";
+                                        cout << "Overdue fine: " << (overdueDays * book->getRentalPrice()) << " VND\n";
+                                    }
+                                    if (condition == "DAMAGED") {
+                                        cout << "Damaged book compensation (50%): " << (estimatedBookValue * 0.5) << " VND\n";
+                                    } else if (condition == "LOST") {
+                                        cout << "Lost book compensation (100%): " << estimatedBookValue << " VND\n";
+                                    }
+                                    cout << "-------------------\n";
+                                    cout << "TOTAL FINE: " << fine << " VND\n";
+                                } else {
+                                    cout << "No fines. Thank you!\n";
+                                }
+                            }
+                            
+                            found = true;
+                        } else {
+                            cout << "Order status: " << order.getStatus() << "\n";
+                            found = true;
+                        }
+                        break;
+                    }
+                }
+                
+                if (!found) cout << "Order not found!\n";
+            } else if (subChoice == 3) { // Xem đơn mượn đang hoạt động
+                cout << "\n--- Active Loans ---\n";
+                bool found = false;
+                
+                for (const auto &order : orders) {
+                    if (order.getStatus() == "ISSUED") {
+                        order.displayOrderInfo();
+                        cout << "---\n";
                         found = true;
                     }
-                    break;
                 }
-            }
-            
-            if (!found) cout << "Order not found!\n";
-            break;
-        }
-        
-        case 8: { // Xem đơn mượn đang hoạt động
-            cout << "\n--- Active Loans ---\n";
-            bool found = false;
-            
-            for (const auto &order : orders) {
-                if (order.getStatus() == "ISSUED") {
-                    order.displayOrderInfo();
-                    cout << "---\n";
-                    found = true;
+                
+                if (!found) cout << "No active loans.\n";
+            } else if (subChoice == 4) { // Xem đơn quá hạn
+                cout << "\n--- Overdue Loans ---\n";
+                bool found = false;
+                
+                for (const auto &order : orders) {
+                    if (order.isOverdue() || order.getStatus() == "OVERDUE") {
+                        order.displayOrderInfo();
+                        cout << "---\n";
+                        found = true;
+                    }
                 }
+                
+                if (!found) cout << "No overdue loans.\n";
             }
-            
-            if (!found) cout << "No active loans.\n";
             break;
         }
         
-        case 9: { // Xem đơn quá hạn
-            cout << "\n--- Overdue Loans ---\n";
-            bool found = false;
+        case 3: { // Quản lý yêu cầu sách
+            cout << "\n--- Manage Requests ---\n";
+            cout << "1. View pending book requests\n";
+            cout << "2. Approve book request\n";
+            cout << "3. Reject book request\n";
+            cout << "0. Back\n";
+            cout << "Choice: ";
             
-            for (const auto &order : orders) {
-                if (order.isOverdue() || order.getStatus() == "OVERDUE") {
-                    order.displayOrderInfo();
-                    cout << "---\n";
-                    found = true;
+            int subChoice;
+            cin >> subChoice;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            
+            if (subChoice == 1) { // Xem yêu cầu đang chờ
+                cout << "\n--- Pending Book Requests ---\n";
+                bool found = false;
+                
+                for (const auto &request : bookRequests) {
+                    if (request.getStatus() == RequestStatus::Pending) {
+                        request.displayRequestInfo();
+                        cout << "---\n";
+                        found = true;
+                    }
                 }
-            }
-            
-            if (!found) cout << "No overdue loans.\n";
-            break;
-        }
-        
-        case 10: { // Xem yêu cầu đang chờ
-            cout << "\n--- Pending Book Requests ---\n";
-            bool found = false;
-            
-            for (const auto &request : bookRequests) {
-                if (request.getStatus() == RequestStatus::Pending) {
-                    request.displayRequestInfo();
-                    cout << "---\n";
-                    found = true;
+                
+                if (!found) cout << "No pending requests.\n";
+            } else if (subChoice == 2) { // Duyệt yêu cầu
+                string requestId = prompt("Enter Request ID to approve: ");
+                bool found = false;
+                
+                for (auto &request : bookRequests) {
+                    if (request.getRequestId() == requestId) {
+                        string notes = prompt("Approval notes (optional): ");
+                        request.approveRequest(getCurrentDate(), notes);
+                        autoSave(library, userService);
+                        cout << "Request approved!\n";
+                        found = true;
+                        break;
+                    }
                 }
-            }
-            
-            if (!found) cout << "No pending requests.\n";
-            break;
-        }
-        
-        case 11: { // Duyệt yêu cầu
-            string requestId = prompt("Enter Request ID to approve: ");
-            bool found = false;
-            
-            for (auto &request : bookRequests) {
-                if (request.getRequestId() == requestId) {
-                    string notes = prompt("Approval notes (optional): ");
-                    request.approveRequest(getCurrentDate(), notes);
-                    cout << "Request approved!\n";
-                    found = true;
-                    break;
+                
+                if (!found) cout << "Request not found!\n";
+            } else if (subChoice == 3) { // Từ chối yêu cầu
+                string requestId = prompt("Enter Request ID to reject: ");
+                bool found = false;
+                
+                for (auto &request : bookRequests) {
+                    if (request.getRequestId() == requestId) {
+                        string notes = prompt("Rejection reason: ");
+                        request.rejectRequest(notes);
+                        autoSave(library, userService);
+                        cout << "Request rejected!\n";
+                        found = true;
+                        break;
+                    }
                 }
+                
+                if (!found) cout << "Request not found!\n";
             }
-            
-            if (!found) cout << "Request not found!\n";
             break;
         }
         
-        case 12: { // Từ chối yêu cầu
-            string requestId = prompt("Enter Request ID to reject: ");
-            bool found = false;
+        case 4: { // Báo cáo
+            cout << "\n--- Generate Reports ---\n";
+            cout << "1. Borrowing report\n";
+            cout << "2. Inventory report\n";
+            cout << "0. Back\n";
+            cout << "Choice: ";
             
-            for (auto &request : bookRequests) {
-                if (request.getRequestId() == requestId) {
-                    string notes = prompt("Rejection reason: ");
-                    request.rejectRequest(notes);
-                    cout << "Request rejected!\n";
-                    found = true;
-                    break;
-                }
+            int subChoice;
+            cin >> subChoice;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            
+            if (subChoice == 1) {
+                ReportGenerator::borrowingTrends(orders);
+            } else if (subChoice == 2) {
+                ReportGenerator::inventory(library.getAllBooks());
             }
-            
-            if (!found) cout << "Request not found!\n";
             break;
         }
         
-        case 13: { // Báo cáo mượn sách
-            ReportGenerator::borrowingTrends(orders);
-            break;
-        }
-        
-        case 14: { // Báo cáo tồn kho
-            ReportGenerator::inventory(library.getAllBooks());
-            break;
-        }
-        
-        case 15: { // Xem hồ sơ
-            currentUser->displayUserInfo();
-            break;
-        }
-        
-        case 16: { // Truy cập chức năng Reader
+        case 5: { // Truy cập chức năng User
             readerMenu(currentUser, library, userService);
+            break;
+        }
+        
+        case 6: { // Xem hồ sơ
+            currentUser->displayUserInfo();
             break;
         }
         
@@ -823,26 +978,12 @@ void adminMenu(User* currentUser, Library &library, UserService &userService) {
     bool running = true;
     while (running) {
         cout << "\n========== ADMIN MENU (" << currentUser->getName() << ") ==========\n";
-        cout << "--- User Management ---\n";
-        cout << "1. Create Librarian account\n";
-        cout << "2. View all users\n";
-        cout << "3. View users by role\n";
-        cout << "4. Deactivate user\n";
-        cout << "5. Activate user\n";
-        cout << "\n--- System Reports ---\n";
-        cout << "6. General statistics\n";
-        cout << "7. User list report\n";
-        cout << "8. Most borrowed books\n";
-        cout << "9. Most active users\n";
-        cout << "10. Popular categories\n";
-        cout << "11. Overdue books report\n";
-        cout << "\n--- Data Management ---\n";
-        cout << "12. Backup system\n";
-        cout << "13. Restore system\n";
-        cout << "\n--- Personal ---\n";
-        cout << "14. View my profile\n";
-        cout << "15. Access Librarian features\n";
-        cout << "16. Access Reader features\n";
+        cout << "1. User Management\n";
+        cout << "2. System Reports\n";
+        cout << "3. Data Management\n";
+        cout << "4. Access Librarian Features\n";
+        cout << "5. Access User Features\n";
+        cout << "6. My Profile\n";
         cout << "0. Logout\n";
         cout << "Enter choice: ";
         
@@ -851,169 +992,179 @@ void adminMenu(User* currentUser, Library &library, UserService &userService) {
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
         switch (choice) {
-        case 1: { // Tạo tài khoản Librarian
-            string name = prompt("Name: ");
-            string email = prompt("Email: ");
-            string password = prompt("Password: ");
-            string phone = prompt("Phone Number: ");
+        case 1: { // Quản lý người dùng
+            cout << "\n--- User Management ---\n";
+            cout << "1. Create Librarian account\n";
+            cout << "2. View all users\n";
+            cout << "3. View users by role\n";
+            cout << "4. Deactivate user\n";
+            cout << "5. Activate user\n";
+            cout << "0. Back\n";
+            cout << "Choice: ";
             
-            if (userService.registerUser(name, email, password, phone, Role::Librarian)) {
-                cout << "Librarian account created successfully!\n";
-            } else {
-                cout << "Failed to create account. Email may already exist.\n";
-            }
-            break;
-        }
-        
-        case 2: { // Xem tất cả người dùng
-            userService.displayAllUsers();
-            break;
-        }
-        
-        case 3: { // Xem người dùng theo vai trò
-            cout << "Select role: 1=Reader, 2=Librarian, 3=Admin: ";
-            int roleChoice;
-            cin >> roleChoice;
+            int subChoice;
+            cin >> subChoice;
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             
-            Role role = (roleChoice == 1) ? Role::Reader : 
-                       (roleChoice == 2) ? Role::Librarian : Role::Admin;
-            
-            auto users = userService.getUsersByRole(role);
-            cout << "\n--- Users with role " << roleChoice << " ---\n";
-            for (auto userPtr : users) {
-                userPtr->displayUserInfo();
-                cout << "---\n";
+            if (subChoice == 1) { // Tạo tài khoản Librarian
+                string name = prompt("Name: ");
+                string email = prompt("Email: ");
+                string password = prompt("Password: ");
+                string phone = prompt("Phone Number: ");
+                
+                if (userService.registerUser(name, email, password, phone, Role::Librarian)) {
+                    autoSave(library, userService);
+                    cout << "Librarian account created successfully!\n";
+                } else {
+                    cout << "Failed to create account. Email may already exist.\n";
+                }
+            } else if (subChoice == 2) { // Xem tất cả người dùng
+                userService.displayAllUsers();
+            } else if (subChoice == 3) { // Xem người dùng theo vai trò
+                cout << "Select role: 1=User, 2=Librarian, 3=Admin: ";
+                int roleChoice;
+                cin >> roleChoice;
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                
+                Role role = (roleChoice == 1) ? Role::User : 
+                           (roleChoice == 2) ? Role::Librarian : Role::Admin;
+                
+                auto users = userService.getUsersByRole(role);
+                cout << "\n--- Users with role " << roleChoice << " ---\n";
+                for (auto userPtr : users) {
+                    userPtr->displayUserInfo();
+                    cout << "---\n";
+                }
+            } else if (subChoice == 4) { // Vô hiệu hóa người dùng
+                string email = prompt("User email to deactivate: ");
+                User* user = userService.findUserByEmail(email);
+                
+                if (user) {
+                    if (userService.deactivateUser(user->getId())) {
+                        autoSave(library, userService);
+                        cout << "User deactivated successfully!\n";
+                    } else {
+                        cout << "Failed to deactivate user.\n";
+                    }
+                } else {
+                    cout << "User not found!\n";
+                }
+            } else if (subChoice == 5) { // Kích hoạt người dùng
+                string email = prompt("User email to activate: ");
+                User* user = userService.findUserByEmail(email);
+                
+                if (user) {
+                    if (userService.activateUser(user->getId())) {
+                        autoSave(library, userService);
+                        cout << "User activated successfully!\n";
+                    } else {
+                        cout << "Failed to activate user.\n";
+                    }
+                } else {
+                    cout << "User not found!\n";
+                }
             }
             break;
         }
         
-        case 4: { // Vô hiệu hóa người dùng
-            string email = prompt("User email to deactivate: ");
-            User* user = userService.findUserByEmail(email);
+        case 2: { // System Reports
+            cout << "\n--- System Reports ---\n";
+            cout << "1. General statistics\n";
+            cout << "2. User list report\n";
+            cout << "3. Most borrowed books\n";
+            cout << "4. Most active users\n";
+            cout << "5. Popular categories\n";
+            cout << "6. Overdue books report\n";
+            cout << "0. Back\n";
+            cout << "Choice: ";
             
-            if (!user) {
-                cout << "User not found!\n";
-                break;
-            }
+            int subChoice;
+            cin >> subChoice;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
             
-            if (userService.deactivateUser(user->getId())) {
-                cout << "User deactivated successfully!\n";
-            } else {
-                cout << "Failed to deactivate user.\n";
-            }
-            break;
-        }
-        
-        case 5: { // Kích hoạt người dùng
-            string email = prompt("User email to activate: ");
-            User* user = userService.findUserByEmail(email);
-            
-            if (!user) {
-                cout << "User not found!\n";
-                break;
-            }
-            
-            if (userService.activateUser(user->getId())) {
-                cout << "User activated successfully!\n";
-            } else {
-                cout << "Failed to activate user.\n";
-            }
-            break;
-        }
-        
-        case 6: { // Thống kê tổng quan
-            auto users = userService.getAllUsers();
-            vector<User> userVector;
-            for (auto userPtr : users) {
-                userVector.push_back(*userPtr);
-            }
-            
-            ReportGenerator::generalStats(userVector, library.getAllBooks(), orders);
-            break;
-        }
-        
-        case 7: { // Báo cáo danh sách người dùng
-            auto users = userService.getAllUsers();
-            vector<User> userVector;
-            for (auto userPtr : users) {
-                userVector.push_back(*userPtr);
-            }
-            
-            ReportGenerator::userList(userVector);
-            break;
-        }
-        
-        case 8: { // Sách được mượn nhiều nhất
-            ReportGenerator::mostBorrowedBooks(library.getAllBooks(), orders, 10);
-            break;
-        }
-        
-        case 9: { // Người dùng tích cực nhất
-            auto users = userService.getAllUsers();
-            vector<User> userVector;
-            for (auto userPtr : users) {
-                userVector.push_back(*userPtr);
-            }
-            
-            ReportGenerator::mostActiveUsers(userVector, orders, 10);
-            break;
-        }
-        
-        case 10: { // Danh mục phổ biến
-            ReportGenerator::popularCategories(library.getAllBooks(), orders);
-            break;
-        }
-        
-        case 11: { // Báo cáo sách quá hạn
-            auto users = userService.getAllUsers();
-            vector<User> userVector;
-            for (auto userPtr : users) {
-                userVector.push_back(*userPtr);
-            }
-            
-            ReportGenerator::overdueBooks(orders, library.getAllBooks(), userVector);
-            break;
-        }
-        
-        case 12: { // Backup hệ thống
-            string filename = prompt("Backup filename (default: backup.txt): ");
-            if (filename.empty()) filename = "backup.txt";
-            
-            if (library.saveToFile(filename + "_books") && 
-                userService.saveToFile(filename + "_users")) {
-                cout << "System backed up successfully!\n";
-                cout << "Files: " << filename << "_books, " << filename << "_users\n";
-            } else {
-                cout << "Backup failed!\n";
+            if (subChoice == 1) { // Thống kê tổng quan
+                auto users = userService.getAllUsers();
+                vector<User> userVector;
+                for (auto userPtr : users) {
+                    userVector.push_back(*userPtr);
+                }
+                ReportGenerator::generalStats(userVector, library.getAllBooks(), orders);
+            } else if (subChoice == 2) { // Báo cáo danh sách người dùng
+                auto users = userService.getAllUsers();
+                vector<User> userVector;
+                for (auto userPtr : users) {
+                    userVector.push_back(*userPtr);
+                }
+                ReportGenerator::userList(userVector);
+            } else if (subChoice == 3) { // Sách được mượn nhiều nhất
+                ReportGenerator::mostBorrowedBooks(library.getAllBooks(), orders, 10);
+            } else if (subChoice == 4) { // Người dùng tích cực nhất
+                auto users = userService.getAllUsers();
+                vector<User> userVector;
+                for (auto userPtr : users) {
+                    userVector.push_back(*userPtr);
+                }
+                ReportGenerator::mostActiveUsers(userVector, orders, 10);
+            } else if (subChoice == 5) { // Danh mục phổ biến
+                ReportGenerator::popularCategories(library.getAllBooks(), orders);
+            } else if (subChoice == 6) { // Báo cáo sách quá hạn
+                auto users = userService.getAllUsers();
+                vector<User> userVector;
+                for (auto userPtr : users) {
+                    userVector.push_back(*userPtr);
+                }
+                ReportGenerator::overdueBooks(orders, library.getAllBooks(), userVector);
             }
             break;
         }
         
-        case 13: { // Restore hệ thống
-            string filename = prompt("Backup filename to restore: ");
+        case 3: { // Data Management
+            cout << "\n--- Data Management ---\n";
+            cout << "1. Backup system\n";
+            cout << "2. Restore system\n";
+            cout << "0. Back\n";
+            cout << "Choice: ";
             
-            if (library.loadFromFile(filename + "_books") && 
-                userService.loadFromFile(filename + "_users")) {
-                cout << "System restored successfully!\n";
-            } else {
-                cout << "Restore failed! Files may not exist.\n";
+            int subChoice;
+            cin >> subChoice;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            
+            if (subChoice == 1) { // Backup hệ thống
+                string filename = prompt("Backup filename (default: backup.txt): ");
+                if (filename.empty()) filename = "backup.txt";
+                
+                if (library.saveToFile(filename + "_books") && 
+                    userService.saveToFile(filename + "_users")) {
+                    cout << "System backed up successfully!\n";
+                    cout << "Files: " << filename << "_books, " << filename << "_users\n";
+                } else {
+                    cout << "Backup failed!\n";
+                }
+            } else if (subChoice == 2) { // Restore hệ thống
+                string filename = prompt("Backup filename to restore: ");
+                
+                if (library.loadFromFile(filename + "_books") && 
+                    userService.loadFromFile(filename + "_users")) {
+                    cout << "System restored successfully!\n";
+                } else {
+                    cout << "Restore failed! Files may not exist.\n";
+                }
             }
             break;
         }
         
-        case 14: { // Xem hồ sơ
-            currentUser->displayUserInfo();
-            break;
-        }
-        
-        case 15: { // Truy cập chức năng Librarian
+        case 4: { // Truy cập chức năng Librarian
             librarianMenu(currentUser, library, userService);
             break;
         }
         
-        case 16: { // Truy cập chức năng Reader
+        case 5: { // Truy cập chức năng User
             readerMenu(currentUser, library, userService);
+            break;
+        }
+        
+        case 6: { // Xem hồ sơ
+            currentUser->displayUserInfo();
             break;
         }
         
@@ -1039,9 +1190,12 @@ int main() {
     // Load dữ liệu từ file (nếu có)
     bool dataLoaded = userService.loadFromFile("users.txt");
     library.loadFromFile("books.txt");
+    loadOrders();
+    loadReservations();
+    loadBookRequests();
     
     // Nếu chưa có dữ liệu, tạo sample accounts
-    if (!dataLoaded || userService.getAllUsers().empty()) {
+    if (!dataLoaded) {
         userService.registerUser("Nguyen Van Admin", "admin@library.com", "admin123",
                                 "0901234567", Role::Admin);
         
@@ -1052,13 +1206,16 @@ int main() {
                                 "0923456789", Role::Librarian);
         
         userService.registerUser("Pham Minh Hieu", "reader1@library.com", "read123",
-                                "0934567890", Role::Reader);
+                                "0934567890", Role::User);
         
         userService.registerUser("Hoang Thi Lan", "reader2@library.com", "read123",
-                                "0945678901", Role::Reader);
+                                "0945678901", Role::User);
         
         userService.registerUser("Vo Quoc Bao", "reader3@library.com", "read123",
-                                "0956789012", Role::Reader);
+                                "0956789012", Role::User);
+        
+        // Lưu sample users ngay sau khi tạo
+        autoSave(library, userService);
     }
     
     User* currentUser = nullptr;
@@ -1103,6 +1260,7 @@ int main() {
                 string phone = prompt("Phone Number: ");
                 
                 if (userService.registerUser(name, email, password, phone)) {
+                    autoSave(library, userService);
                     cout << "Registration successful! Please login.\n";
                 } else {
                     cout << "Registration failed! Email may already exist.\n";

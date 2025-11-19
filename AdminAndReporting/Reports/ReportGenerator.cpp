@@ -118,7 +118,7 @@ void ReportGenerator::userList(const vector<User>& users) {
     for (const auto& u : users) {
         string roleStr;
         switch (u.getRole()) {
-            case Role::Reader: roleStr = "Reader"; break;
+            case Role::User: roleStr = "User"; break;
             case Role::Librarian: roleStr = "Librarian"; break;
             case Role::Admin: roleStr = "Administrator"; break;
         }

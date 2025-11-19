@@ -23,7 +23,7 @@ public:
 
     // User Registration and Authentication
     bool registerUser(const string& name, const string& email, const string& password,
-                     const string& phoneNumber, Role role = Role::Reader);
+                     const string& phoneNumber, Role role = Role::User);
     
     User* login(const string& email, const string& password);
     void logout();

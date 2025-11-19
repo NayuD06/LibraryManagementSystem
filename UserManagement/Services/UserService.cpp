@@ -190,13 +190,14 @@ bool UserService::loadFromFile(const string& filename) {
     string line;
     while (getline(inFile, line)) {
         if (!line.empty()) {
-            users.push_back(User::deserialize(line));
-            if (users.back().getId() >= nextUserId) {
-                nextUserId = users.back().getId() + 1;
+            User user = User::deserialize(line);
+            users.push_back(user);
+            if (user.getId() >= nextUserId) {
+                nextUserId = user.getId() + 1;
             }
         }
     }
     
     inFile.close();
-    return true;
+    return !users.empty(); // Return true only if we loaded at least one user
 }

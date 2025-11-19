@@ -5,7 +5,7 @@
 
 using namespace std;
 
-enum class Role { Reader, Librarian, Admin };
+enum class Role { User, Librarian, Admin };
 
 class User {
 private:
@@ -24,7 +24,7 @@ public:
     // Constructors
     User();
     User(int id, const string& name, const string& email, const string& password, 
-         const string& phoneNumber, Role role = Role::Reader);
+         const string& phoneNumber, Role role = Role::User);
 
     // Getters
     int getId() const;
