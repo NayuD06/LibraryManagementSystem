@@ -1,6 +1,7 @@
 #include "Order.h"
 
 #include <iostream>
+#include <ctime>
 
 using namespace std;
 
@@ -84,16 +85,35 @@ bool Order::isOverdue() const {
 }
 
 int Order::calculateOverdueDays() const {
-	// Tính số ngày quá hạn (simplified - giả định mỗi ngày cách nhau 1 đơn vị)
+	// Tính số ngày quá hạn
 	if (returnDate.empty() || dueDate.empty()) return 0;
 	
-	// So sánh chuỗi ngày (format: YYYY-MM-DD)
-	if (returnDate > dueDate) {
-		// Simplified: giả định mỗi ngày = 1
-		// Trong thực tế cần parse date và tính chênh lệch
-		return 5; // Placeholder - trả về số ngày cố định để demo
-	}
-	return 0;
+	// Parse ngày trả và ngày hạn (format: YYYY-MM-DD)
+	int retYear, retMonth, retDay;
+	int dueYear, dueMonth, dueDay;
+	
+	sscanf(returnDate.c_str(), "%d-%d-%d", &retYear, &retMonth, &retDay);
+	sscanf(dueDate.c_str(), "%d-%d-%d", &dueYear, &dueMonth, &dueDay);
+	
+	// Chuyển sang struct tm
+	tm retTm = {0};
+	retTm.tm_year = retYear - 1900;
+	retTm.tm_mon = retMonth - 1;
+	retTm.tm_mday = retDay;
+	
+	tm dueTm = {0};
+	dueTm.tm_year = dueYear - 1900;
+	dueTm.tm_mon = dueMonth - 1;
+	dueTm.tm_mday = dueDay;
+	
+	// Tính chênh lệch (giây)
+	time_t retTime = mktime(&retTm);
+	time_t dueTime = mktime(&dueTm);
+	
+	double diffSeconds = difftime(retTime, dueTime);
+	int diffDays = (int)(diffSeconds / (24 * 60 * 60));
+	
+	return (diffDays > 0) ? diffDays : 0;
 }
 
 double Order::calculateFine(double dailyFineRate, double bookPrice) const {

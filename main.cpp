@@ -11,6 +11,7 @@
 #include <vector>
 #include <algorithm>
 #include <sstream>
+#include <ctime>
 
 #include "UserManagement/User.h"
 #include "UserManagement/Services/UserService.h"
@@ -50,14 +51,29 @@ string toString(int num) {
     return ss.str();
 }
 
-// Hàm lấy ngày hiện tại (simplified)
+// Hàm lấy ngày hiện tại
 string getCurrentDate() {
-    return "2025-11-19"; // Placeholder - có thể dùng <ctime> để lấy ngày thực
+    time_t now = time(0);
+    tm* ltm = localtime(&now);
+    char buffer[11];
+    sprintf(buffer, "%04d-%02d-%02d", 
+            1900 + ltm->tm_year, 
+            1 + ltm->tm_mon, 
+            ltm->tm_mday);
+    return string(buffer);
 }
 
 // Hàm tính ngày đến hạn (thêm số ngày vào ngày hiện tại)
 string calculateDueDate(int days) {
-    return "2025-12-03"; // Placeholder - cộng days vào getCurrentDate()
+    time_t now = time(0);
+    now += days * 24 * 60 * 60; // Thêm số giây
+    tm* ltm = localtime(&now);
+    char buffer[11];
+    sprintf(buffer, "%04d-%02d-%02d", 
+            1900 + ltm->tm_year, 
+            1 + ltm->tm_mon, 
+            ltm->tm_mday);
+    return string(buffer);
 }
 
 // ===== READER MENU =====
@@ -167,7 +183,7 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
             string borrowDate = getCurrentDate();
             string dueDate = calculateDueDate(14); // 14 ngày mượn
             
-            Order newOrder(orderId, userId, bookId, "ISSUED", borrowDate, borrowDate, dueDate);
+            Order newOrder(orderId, userId, bookId, "ISSUED", borrowDate, borrowDate, dueDate, "", 0, "GOOD");
             orders.push_back(newOrder);
             
             // Giảm số sách có sẵn
@@ -206,7 +222,11 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
                     
                     if (order.getStatus() == "ISSUED") {
                         order.renewOrder();
+                        // Gia hạn thêm 14 ngày
+                        string newDueDate = calculateDueDate(14);
+                        order.setDueDate(newDueDate);
                         cout << "Loan renewed successfully!\n";
+                        cout << "New due date: " << newDueDate << "\n";
                         found = true;
                     } else {
                         cout << "Cannot renew this order (status: " << order.getStatus() << ")\n";
@@ -623,7 +643,7 @@ void librarianMenu(User* currentUser, Library &library, UserService &userService
             string borrowDate = getCurrentDate();
             string dueDate = calculateDueDate(14);
             
-            Order newOrder(orderId, userId, bookId, "ISSUED", borrowDate, borrowDate, dueDate);
+            Order newOrder(orderId, userId, bookId, "ISSUED", borrowDate, borrowDate, dueDate, "", 0, "GOOD");
             orders.push_back(newOrder);
             book->decreaseAvailableQuantity();
             
