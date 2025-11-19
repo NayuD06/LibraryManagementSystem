@@ -124,7 +124,7 @@ void ReportGenerator::userList(const vector<User>& users) {
         }
         
         cout << left << setw(6) << u.getId()
-             << setw(38) << u.getFullName().substr(0, 37)
+             << setw(38) << u.getName().substr(0, 37)
              << roleStr << "\n";
     }
     
@@ -372,7 +372,7 @@ void ReportGenerator::mostActiveUsers(const vector<User>& users,
     for (const auto& user : users) {
         stringstream ss;
         ss << user.getId();
-        userNames[ss.str()] = user.getFullName();
+        userNames[ss.str()] = user.getName();
     }
     
     vector<pair<string, int>> sortedUsers(userBorrowCount.begin(), userBorrowCount.end());
@@ -405,31 +405,8 @@ void ReportGenerator::userActivityReport(const User& user) {
     cout << "   USER ACTIVITY REPORT\n";
     cout << "========================================\n";
     cout << "User ID: " << user.getId() << "\n";
-    cout << "Name:    " << user.getFullName() << "\n";
+    cout << "Name:    " << user.getName() << "\n";
     cout << "----------------------------------------\n";
-    cout << "ACTIVITY HISTORY:\n";
-    cout << "----------------------------------------\n";
-    
-    const vector<ActivityLog>& activities = user.getActivityHistory();
-    
-    if (activities.empty()) {
-        cout << "No activities recorded.\n";
-    } else {
-        cout << left << setw(16) << "Timestamp" << "Activity\n";
-        cout << "----------------------------------------\n";
-        
-        for (size_t i = 0; i < activities.size() && i < 10; i++) {
-            const auto& activity = activities[activities.size() - 1 - i];
-            string activityDesc = activity.action + ": " + activity.details;
-            cout << left << setw(16) << activity.timestamp.substr(0, 15)
-                 << activityDesc.substr(0, 60) << "\n";
-        }
-        
-        if (activities.size() > 10) {
-            cout << "... and " << (activities.size() - 10) << " more activities\n";
-        }
-    }
-    
+    cout << "No activity tracking available.\n";
     cout << "========================================\n";
-    cout << "Total activities: " << activities.size() << "\n";
 }

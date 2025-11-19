@@ -28,8 +28,7 @@ private:
     BookStatus status;
     BookCondition condition;
     int viewCount;              // Number of views
-    double rentalPrice;
-    double purchasePrice;
+    double rentalPrice;         // Giá thuê/ngày (dùng cho phí phạt)
 
 public:
     // Constructors
@@ -38,7 +37,7 @@ public:
          const string& publisher, int year, const string& ISBN,
          const vector<string>& categories, const vector<string>& keywords,
          int quantity, int pages, const string& briefDesc, const string& detailedDesc,
-         double rentalPrice, double purchasePrice);
+         double rentalPrice);
 
     // Getters
     string getBookId() const;
@@ -58,7 +57,6 @@ public:
     BookCondition getCondition() const;
     int getViewCount() const;
     double getRentalPrice() const;
-    double getPurchasePrice() const;
 
     // Setters for updating book information
     void setTitle(const string& newTitle);
@@ -74,7 +72,6 @@ public:
     void setDetailedDescription(const string& desc);
     void setCondition(BookCondition cond);
     void setRentalPrice(double price);
-    void setPurchasePrice(double price);
 
     // Book operations
     void displayBookInfo() const;

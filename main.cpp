@@ -86,24 +86,15 @@ string calculateDueDate(int days) {
 void readerMenu(User* currentUser, Library &library, UserService &userService) {
     bool running = true;
     while (running) {
-        cout << "\n========== READER MENU (" << currentUser->getFullName() << ") ==========\n";
-        cout << "1. View available books\n";
-        cout << "2. Search books by title\n";
-        cout << "3. Search books by author\n";
-        cout << "4. View books by category\n";
-        cout << "5. View popular books\n";
-        cout << "6. Borrow a book\n";
-        cout << "7. View my borrow history\n";
-        cout << "8. Renew a loan\n";
-        cout << "9. Return a book\n";
-        cout << "10. Reserve a book\n";
-        cout << "11. View my reservations\n";
-        cout << "12. Request a new book\n";
-        cout << "13. View my book requests\n";
-        cout << "14. Cancel a request\n";
-        cout << "15. View my profile\n";
-        cout << "16. Update my profile\n";
-        cout << "17. Change password\n";
+        cout << "\n========== READER MENU (" << currentUser->getName() << ") ==========\n";
+        cout << "1. Browse & Search books\n";
+        cout << "2. Borrow a book\n";
+        cout << "3. Return a book\n";
+        cout << "4. Renew a loan\n";
+        cout << "5. Manage reservations\n";
+        cout << "6. Manage book requests\n";
+        cout << "7. My profile\n";
+        cout << "8. Change password\n";
         cout << "0. Logout\n";
         cout << "Enter choice: ";
         
@@ -112,58 +103,61 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
         switch (choice) {
-        case 1: { // Xem sách có sẵn
-            cout << "\n--- Available Books ---\n";
-            bool found = false;
-            for (const auto &book : library.getAllBooks()) {
-                if (book.getAvailableQuantity() > 0) {
-                    book.displayBookInfo();
+        case 1: { // Browse & Search books - submenu
+            cout << "\n--- Browse & Search ---\n";
+            cout << "1. View available books\n";
+            cout << "2. Search by title\n";
+            cout << "3. Search by author\n";
+            cout << "4. View by category\n";
+            cout << "5. View popular books\n";
+            cout << "0. Back\n";
+            cout << "Choice: ";
+            
+            int subChoice;
+            cin >> subChoice;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            
+            if (subChoice == 1) {
+                cout << "\n--- Available Books ---\n";
+                bool found = false;
+                for (const auto &book : library.getAllBooks()) {
+                    if (book.getAvailableQuantity() > 0) {
+                        book.displayBookInfo();
+                        cout << "---\n";
+                        found = true;
+                    }
+                }
+                if (!found) cout << "No books available.\n";
+            } else if (subChoice == 2) {
+                string keyword = prompt("Enter book title: ");
+                auto results = library.searchByTitle(keyword);
+                cout << "\nFound " << results.size() << " book(s):\n";
+                for (auto bookPtr : results) {
+                    bookPtr->displayBookInfo();
                     cout << "---\n";
-                    found = true;
+                }
+            } else if (subChoice == 3) {
+                string author = prompt("Enter author name: ");
+                auto results = library.searchByAuthor(author);
+                cout << "\nFound " << results.size() << " book(s):\n";
+                for (auto bookPtr : results) {
+                    bookPtr->displayBookInfo();
+                    cout << "---\n";
+                }
+            } else if (subChoice == 4) {
+                library.displayBooksByCategory();
+            } else if (subChoice == 5) {
+                auto popularBooks = library.sortByPopularity();
+                cout << "\n--- Popular Books (sorted by views) ---\n";
+                for (auto bookPtr : popularBooks) {
+                    bookPtr->displayBookInfo();
+                    cout << "---\n";
                 }
             }
-            if (!found) cout << "No books available.\n";
             break;
         }
         
-        case 2: { // Tìm sách theo tên
-            string keyword = prompt("Enter book title: ");
-            auto results = library.searchByTitle(keyword);
-            cout << "\nFound " << results.size() << " book(s):\n";
-            for (auto bookPtr : results) {
-                bookPtr->displayBookInfo();
-                cout << "---\n";
-            }
-            break;
-        }
-        
-        case 3: { // Tìm sách theo tác giả
-            string author = prompt("Enter author name: ");
-            auto results = library.searchByAuthor(author);
-            cout << "\nFound " << results.size() << " book(s):\n";
-            for (auto bookPtr : results) {
-                bookPtr->displayBookInfo();
-                cout << "---\n";
-            }
-            break;
-        }
-        
-        case 4: { // Xem sách theo danh mục
-            library.displayBooksByCategory();
-            break;
-        }
-        
-        case 5: { // Xem sách phổ biến
-            auto popularBooks = library.sortByPopularity();
-            cout << "\n--- Popular Books (sorted by views) ---\n";
-            for (auto bookPtr : popularBooks) {
-                bookPtr->displayBookInfo();
-                cout << "---\n";
-            }
-            break;
-        }
-        
-        case 6: { // Mượn sách
+        case 2: { // Mượn sách
             string bookId = prompt("Enter Book ID: ");
             Book* book = library.findBookById(bookId);
             
@@ -267,7 +261,8 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
                             book->increaseAvailableQuantity();
                             
                             // Tính phí phạt
-                            double fine = order.calculateFine(book->getRentalPrice(), book->getPurchasePrice());
+                            double fine = order.calculateFine(book->getRentalPrice());
+                            double estimatedBookValue = book->getRentalPrice() * 100;
                             
                             cout << "\n=== Return Summary ===\n";
                             cout << "Book returned successfully!\n";
@@ -282,9 +277,9 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
                                     cout << "Overdue fine: " << (overdueDays * book->getRentalPrice()) << " VND\n";
                                 }
                                 if (condition == "DAMAGED") {
-                                    cout << "Damaged book compensation (50%): " << (book->getPurchasePrice() * 0.5) << " VND\n";
+                                    cout << "Damaged book compensation (50%): " << (estimatedBookValue * 0.5) << " VND\n";
                                 } else if (condition == "LOST") {
-                                    cout << "Lost book compensation (100%): " << book->getPurchasePrice() << " VND\n";
+                                    cout << "Lost book compensation (100%): " << estimatedBookValue << " VND\n";
                                 }
                                 cout << "-------------------\n";
                                 cout << "TOTAL FINE: " << fine << " VND\n";
@@ -411,21 +406,12 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
         }
         
         case 16: { // Cập nhật hồ sơ
-            cout << "\n--- Update Profile (leave blank to keep current value) ---\n";
-            string name = prompt("Full name: ");
-            string dob = prompt("Date of Birth (YYYY-MM-DD): ");
+            cout << "\n--- Update Profile ---\n";
+            string name = prompt("Name: ");
+            string email = prompt("Email: ");
+            string phone = prompt("Phone Number: ");
             
-            cout << "Gender (1=Male, 2=Female, 3=Other): ";
-            int genderChoice;
-            cin >> genderChoice;
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            Gender gender = (genderChoice == 1) ? Gender::Male : 
-                           (genderChoice == 2) ? Gender::Female : Gender::Other;
-            
-            string address = prompt("Address: ");
-            string phone = prompt("Phone: ");
-            
-            if (userService.updateUserProfile(currentUser->getId(), name, dob, gender, address, phone)) {
+            if (userService.updateUserProfile(currentUser->getId(), name, email, phone)) {
                 cout << "Profile updated successfully!\n";
             } else {
                 cout << "Failed to update profile.\n";
@@ -467,7 +453,7 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
 void librarianMenu(User* currentUser, Library &library, UserService &userService) {
     bool running = true;
     while (running) {
-        cout << "\n========== LIBRARIAN MENU (" << currentUser->getFullName() << ") ==========\n";
+        cout << "\n========== LIBRARIAN MENU (" << currentUser->getName() << ") ==========\n";
         cout << "--- Book Management ---\n";
         cout << "1. Add new book\n";
         cout << "2. Update book\n";
@@ -529,16 +515,11 @@ void librarianMenu(User* currentUser, Library &library, UserService &userService
             cin >> rentalPrice;
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             
-            cout << "Purchase price: ";
-            double purchasePrice;
-            cin >> purchasePrice;
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            
             vector<string> categories = {category};
             vector<string> keywords = {keyword};
             
             library.addNewBook(title, author, publisher, year, isbn, categories, keywords, 
-                             quantity, pages, briefDesc, detailedDesc, rentalPrice, purchasePrice);
+                             quantity, pages, briefDesc, detailedDesc, rentalPrice);
             
             cout << "Book added successfully!\n";
             break;
@@ -571,8 +552,7 @@ void librarianMenu(User* currentUser, Library &library, UserService &userService
                     book->getTotalPages(),
                     book->getBriefDescription(),
                     book->getDetailedDescription(),
-                    book->getRentalPrice(),
-                    book->getPurchasePrice());
+                    book->getRentalPrice());
                 
                 cout << "Book updated successfully!\n";
             }
@@ -676,7 +656,8 @@ void librarianMenu(User* currentUser, Library &library, UserService &userService
                             book->increaseAvailableQuantity();
                             
                             // Tính phí phạt
-                            double fine = order.calculateFine(book->getRentalPrice(), book->getPurchasePrice());
+                            double fine = order.calculateFine(book->getRentalPrice());
+                            double estimatedBookValue = book->getRentalPrice() * 100;
                             
                             cout << "\n=== Return Summary ===\n";
                             cout << "Book return processed successfully!\n";
@@ -691,9 +672,9 @@ void librarianMenu(User* currentUser, Library &library, UserService &userService
                                     cout << "Overdue fine: " << (overdueDays * book->getRentalPrice()) << " VND\n";
                                 }
                                 if (condition == "DAMAGED") {
-                                    cout << "Damaged book compensation (50%): " << (book->getPurchasePrice() * 0.5) << " VND\n";
+                                    cout << "Damaged book compensation (50%): " << (estimatedBookValue * 0.5) << " VND\n";
                                 } else if (condition == "LOST") {
-                                    cout << "Lost book compensation (100%): " << book->getPurchasePrice() << " VND\n";
+                                    cout << "Lost book compensation (100%): " << estimatedBookValue << " VND\n";
                                 }
                                 cout << "-------------------\n";
                                 cout << "TOTAL FINE: " << fine << " VND\n";
@@ -841,7 +822,7 @@ void librarianMenu(User* currentUser, Library &library, UserService &userService
 void adminMenu(User* currentUser, Library &library, UserService &userService) {
     bool running = true;
     while (running) {
-        cout << "\n========== ADMIN MENU (" << currentUser->getFullName() << ") ==========\n";
+        cout << "\n========== ADMIN MENU (" << currentUser->getName() << ") ==========\n";
         cout << "--- User Management ---\n";
         cout << "1. Create Librarian account\n";
         cout << "2. View all users\n";
@@ -871,22 +852,12 @@ void adminMenu(User* currentUser, Library &library, UserService &userService) {
 
         switch (choice) {
         case 1: { // Tạo tài khoản Librarian
-            string name = prompt("Full name: ");
-            string dob = prompt("Date of Birth (YYYY-MM-DD): ");
-            
-            cout << "Gender (1=Male, 2=Female, 3=Other): ";
-            int genderChoice;
-            cin >> genderChoice;
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            Gender gender = (genderChoice == 1) ? Gender::Male : 
-                           (genderChoice == 2) ? Gender::Female : Gender::Other;
-            
-            string address = prompt("Address: ");
-            string phone = prompt("Phone: ");
+            string name = prompt("Name: ");
             string email = prompt("Email: ");
             string password = prompt("Password: ");
+            string phone = prompt("Phone Number: ");
             
-            if (userService.registerUser(name, dob, gender, address, phone, email, password, Role::Librarian)) {
+            if (userService.registerUser(name, email, password, phone, Role::Librarian)) {
                 cout << "Librarian account created successfully!\n";
             } else {
                 cout << "Failed to create account. Email may already exist.\n";
@@ -1071,29 +1042,23 @@ int main() {
     
     // Nếu chưa có dữ liệu, tạo sample accounts
     if (!dataLoaded || userService.getAllUsers().empty()) {
-        userService.registerUser("Nguyen Van Admin", "1990-01-01", Gender::Male,
-                                "123 Admin St", "0901234567", "admin@library.com",
-                                "admin123", Role::Admin);
+        userService.registerUser("Nguyen Van Admin", "admin@library.com", "admin123",
+                                "0901234567", Role::Admin);
         
-        userService.registerUser("Tran Thi Thu", "1995-05-15", Gender::Female,
-                                "456 Librarian Ave", "0912345678", "librarian1@library.com",
-                                "lib123", Role::Librarian);
+        userService.registerUser("Tran Thi Thu", "librarian1@library.com", "lib123",
+                                "0912345678", Role::Librarian);
         
-        userService.registerUser("Le Van Binh", "1993-03-20", Gender::Male,
-                                "789 Librarian Blvd", "0923456789", "librarian2@library.com",
-                                "lib123", Role::Librarian);
+        userService.registerUser("Le Van Binh", "librarian2@library.com", "lib123",
+                                "0923456789", Role::Librarian);
         
-        userService.registerUser("Pham Minh Hieu", "2000-07-10", Gender::Male,
-                                "111 Reader St", "0934567890", "reader1@library.com",
-                                "read123", Role::Reader);
+        userService.registerUser("Pham Minh Hieu", "reader1@library.com", "read123",
+                                "0934567890", Role::Reader);
         
-        userService.registerUser("Hoang Thi Lan", "1998-12-25", Gender::Female,
-                                "222 Reader Ave", "0945678901", "reader2@library.com",
-                                "read123", Role::Reader);
+        userService.registerUser("Hoang Thi Lan", "reader2@library.com", "read123",
+                                "0945678901", Role::Reader);
         
-        userService.registerUser("Vo Quoc Bao", "2001-09-08", Gender::Male,
-                                "333 Reader Blvd", "0956789012", "reader3@library.com",
-                                "read123", Role::Reader);
+        userService.registerUser("Vo Quoc Bao", "reader3@library.com", "read123",
+                                "0956789012", Role::Reader);
     }
     
     User* currentUser = nullptr;
@@ -1124,7 +1089,7 @@ int main() {
                 currentUser = userService.login(email, password);
                 
                 if (currentUser) {
-                    cout << "Login successful! Welcome, " << currentUser->getFullName() << "!\n";
+                    cout << "Login successful! Welcome, " << currentUser->getName() << "!\n";
                 } else {
                     cout << "Login failed! Invalid email or password.\n";
                 }
@@ -1132,22 +1097,12 @@ int main() {
             }
             
             case 2: { // Đăng ký (chỉ Reader)
-                string name = prompt("Full name: ");
-                string dob = prompt("Date of Birth (YYYY-MM-DD): ");
-                
-                cout << "Gender (1=Male, 2=Female, 3=Other): ";
-                int genderChoice;
-                cin >> genderChoice;
-                cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                Gender gender = (genderChoice == 1) ? Gender::Male : 
-                               (genderChoice == 2) ? Gender::Female : Gender::Other;
-                
-                string address = prompt("Address: ");
-                string phone = prompt("Phone: ");
+                string name = prompt("Name: ");
                 string email = prompt("Email: ");
                 string password = prompt("Password: ");
+                string phone = prompt("Phone Number: ");
                 
-                if (userService.registerUser(name, dob, gender, address, phone, email, password)) {
+                if (userService.registerUser(name, email, password, phone)) {
                     cout << "Registration successful! Please login.\n";
                 } else {
                     cout << "Registration failed! Email may already exist.\n";

@@ -7,19 +7,19 @@ using namespace std;
 
 // Constructors
 Book::Book() : totalQuantity(0), availableQuantity(0), totalPages(0), 
-               viewCount(0), rentalPrice(0.0), purchasePrice(0.0),
+               viewCount(0), rentalPrice(0.0),
                status(BookStatus::Available), condition(BookCondition::Good) {}
 
 Book::Book(const string& bookId, const string& title, const string& author,
            const string& publisher, int year, const string& ISBN,
            const vector<string>& categories, const vector<string>& keywords,
            int quantity, int pages, const string& briefDesc, const string& detailedDesc,
-           double rentalPrice, double purchasePrice)
+           double rentalPrice)
     : bookId(bookId), title(title), author(author), publisher(publisher),
       yearOfPublication(year), ISBN(ISBN), categories(categories), keywords(keywords),
       totalQuantity(quantity), availableQuantity(quantity), totalPages(pages),
       briefDescription(briefDesc), detailedDescription(detailedDesc),
-      viewCount(0), rentalPrice(rentalPrice), purchasePrice(purchasePrice),
+      viewCount(0), rentalPrice(rentalPrice),
       status(BookStatus::Available), condition(BookCondition::Good) {}
 
 // Getters
@@ -40,7 +40,6 @@ BookStatus Book::getStatus() const { return status; }
 BookCondition Book::getCondition() const { return condition; }
 int Book::getViewCount() const { return viewCount; }
 double Book::getRentalPrice() const { return rentalPrice; }
-double Book::getPurchasePrice() const { return purchasePrice; }
 
 // Setters
 void Book::setTitle(const string& newTitle) { title = newTitle; }
@@ -59,7 +58,6 @@ void Book::setBriefDescription(const string& desc) { briefDescription = desc; }
 void Book::setDetailedDescription(const string& desc) { detailedDescription = desc; }
 void Book::setCondition(BookCondition cond) { condition = cond; }
 void Book::setRentalPrice(double price) { rentalPrice = price; }
-void Book::setPurchasePrice(double price) { purchasePrice = price; }
 
 // Display book information
 void Book::displayBookInfo() const {
@@ -82,8 +80,7 @@ void Book::displayBookInfo() const {
     cout << "Status: " << statusToString() << "\n";
     cout << "Condition: " << conditionToString() << "\n";
     cout << "Views: " << viewCount << "\n";
-    cout << "Rental Price: $" << fixed << setprecision(2) << rentalPrice << "\n";
-    cout << "Purchase Price: $" << fixed << setprecision(2) << purchasePrice << "\n";
+    cout << "Rental Price: $" << fixed << setprecision(2) << rentalPrice << "/day\n";
     cout << "Brief: " << briefDescription << "\n";
 }
 
@@ -201,7 +198,7 @@ string Book::serialize() const {
     ss << totalQuantity << "|" << availableQuantity << "|" << totalPages << "|"
        << briefDescription << "|" << detailedDescription << "|"
        << statusToString() << "|" << conditionToString() << "|"
-       << viewCount << "|" << rentalPrice << "|" << purchasePrice;
+       << viewCount << "|" << rentalPrice;
     
     return ss.str();
 }
@@ -210,7 +207,7 @@ Book Book::deserialize(const string& line) {
     stringstream ss(line);
     string bookId, title, author, publisher, yearStr, ISBN, catStr, kwStr;
     string qtyStr, availStr, pagesStr, briefDesc, detailDesc, statusStr, condStr;
-    string viewStr, rentalStr, purchaseStr;
+    string viewStr, rentalStr;
     
     getline(ss, bookId, '|');
     getline(ss, title, '|');
@@ -229,7 +226,6 @@ Book Book::deserialize(const string& line) {
     getline(ss, condStr, '|');
     getline(ss, viewStr, '|');
     getline(ss, rentalStr, '|');
-    getline(ss, purchaseStr, '|');
     
     // Parse categories
     vector<string> categories;
@@ -253,7 +249,7 @@ Book Book::deserialize(const string& line) {
     
     Book book(bookId, title, author, publisher, stoi(yearStr), ISBN,
               categories, keywords, stoi(qtyStr), stoi(pagesStr),
-              briefDesc, detailDesc, stod(rentalStr), stod(purchaseStr));
+              briefDesc, detailDesc, stod(rentalStr));
     
     book.availableQuantity = stoi(availStr);
     book.status = stringToStatus(statusStr);

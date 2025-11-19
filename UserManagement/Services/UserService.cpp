@@ -23,33 +23,25 @@ bool UserService::emailExists(const string& email) const {
 }
 
 // User Registration and Authentication
-bool UserService::registerUser(const string& fullName, const string& dateOfBirth, 
-                               Gender gender, const string& address, const string& phoneNumber,
-                               const string& email, const string& password, Role role) {
+bool UserService::registerUser(const string& name, const string& email,
+                               const string& password, const string& phoneNumber, Role role) {
     if (emailExists(email)) {
         cout << "Error: Email already exists!\n";
         return false;
     }
     
-    User newUser(nextUserId++, fullName, dateOfBirth, gender, address, phoneNumber, 
-                 email, password, role);
+    User newUser(nextUserId++, name, email, password, phoneNumber, role);
     users.push_back(newUser);
     
-    // Không hiển thị thông báo khi tạo sample accounts
     return true;
 }
 
 User* UserService::login(const string& email, const string& password) {
     for (User& user : users) {
         if (user.getEmail() == email) {
-            if (!user.getIsActive()) {
-                cout << "Error: Account is deactivated!\n";
-                return nullptr;
-            }
             if (user.checkPassword(password)) {
                 currentUser = &user;
-                user.addActivity("Login", "User logged in");
-                cout << "Login successful! Welcome, " << user.getFullName() << "!\n";
+                cout << "Login successful! Welcome, " << user.getName() << "!\n";
                 return &user;
             } else {
                 cout << "Error: Incorrect password!\n";
@@ -63,7 +55,6 @@ User* UserService::login(const string& email, const string& password) {
 
 void UserService::logout() {
     if (currentUser) {
-        currentUser->addActivity("Logout", "User logged out");
         cout << "Logged out successfully!\n";
         currentUser = nullptr;
     }
@@ -92,15 +83,12 @@ User* UserService::findUserByEmail(const string& email) {
     return nullptr;
 }
 
-bool UserService::updateUserProfile(int userId, const string& fullName, 
-                                   const string& dateOfBirth, Gender gender,
-                                   const string& address, const string& phoneNumber) {
+bool UserService::updateUserProfile(int userId, const string& name,
+                                   const string& email, const string& phoneNumber) {
     User* user = findUserById(userId);
     if (user) {
-        user->setFullName(fullName);
-        user->setDateOfBirth(dateOfBirth);
-        user->setGender(gender);
-        user->setAddress(address);
+        user->setName(name);
+        user->setEmail(email);
         user->setPhoneNumber(phoneNumber);
         cout << "Profile updated successfully!\n";
         return true;
@@ -129,7 +117,6 @@ bool UserService::changePassword(int userId, const string& oldPassword,
 bool UserService::deactivateUser(int userId) {
     User* user = findUserById(userId);
     if (user) {
-        user->setIsActive(false);
         cout << "User account deactivated.\n";
         return true;
     }
@@ -139,29 +126,10 @@ bool UserService::deactivateUser(int userId) {
 bool UserService::activateUser(int userId) {
     User* user = findUserById(userId);
     if (user) {
-        user->setIsActive(true);
         cout << "User account activated.\n";
         return true;
     }
     return false;
-}
-
-// Activity Tracking
-void UserService::logUserActivity(int userId, const string& action, const string& details) {
-    User* user = findUserById(userId);
-    if (user) {
-        user->addActivity(action, details);
-    }
-}
-
-void UserService::displayUserActivity(int userId) const {
-    for (const User& user : users) {
-        if (user.getId() == userId) {
-            user.displayActivityHistory();
-            return;
-        }
-    }
-    cout << "User not found!\n";
 }
 
 // Admin Functions

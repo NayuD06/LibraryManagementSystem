@@ -26,13 +26,13 @@ public:
                    int year, const string& ISBN, const vector<string>& categories,
                    const vector<string>& keywords, int quantity, int pages,
                    const string& briefDesc, const string& detailedDesc,
-                   double rentalPrice, double purchasePrice);
+                   double rentalPrice);
     
     bool updateBook(const string& bookId, const string& newTitle, const string& newAuthor,
                    const string& newPublisher, int newYear, const vector<string>& newCategories,
                    const vector<string>& newKeywords, int newQuantity, int newPages,
                    const string& newBriefDesc, const string& newDetailedDesc,
-                   double newRentalPrice, double newPurchasePrice);
+                   double newRentalPrice);
     
     bool removeBook(const string& bookId);
     

@@ -22,9 +22,8 @@ public:
     UserService();
 
     // User Registration and Authentication
-    bool registerUser(const string& fullName, const string& dateOfBirth, Gender gender,
-                     const string& address, const string& phoneNumber, const string& email,
-                     const string& password, Role role = Role::Reader);
+    bool registerUser(const string& name, const string& email, const string& password,
+                     const string& phoneNumber, Role role = Role::Reader);
     
     User* login(const string& email, const string& password);
     void logout();
@@ -33,15 +32,10 @@ public:
     // User Management
     User* findUserById(int userId);
     User* findUserByEmail(const string& email);
-    bool updateUserProfile(int userId, const string& fullName, const string& dateOfBirth,
-                          Gender gender, const string& address, const string& phoneNumber);
+    bool updateUserProfile(int userId, const string& name, const string& email, const string& phoneNumber);
     bool changePassword(int userId, const string& oldPassword, const string& newPassword);
     bool deactivateUser(int userId);
     bool activateUser(int userId);
-    
-    // Activity Tracking
-    void logUserActivity(int userId, const string& action, const string& details);
-    void displayUserActivity(int userId) const;
     
     // Admin Functions
     vector<User*> getAllUsers();
