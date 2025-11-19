@@ -20,7 +20,10 @@ Book::Book(const string& bookId, const string& title, const string& author,
       totalQuantity(quantity), availableQuantity(quantity), totalPages(pages),
       briefDescription(briefDesc), detailedDescription(detailedDesc),
       viewCount(0), rentalPrice(rentalPrice),
-      status(BookStatus::Available), condition(BookCondition::Good) {}
+      status(BookStatus::Available), condition(BookCondition::Good) {
+    // Cập nhật status dựa trên số lượng thực tế
+    updateStatus();
+}
 
 // Getters
 string Book::getBookId() const { return bookId; }
