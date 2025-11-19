@@ -341,11 +341,21 @@ bool Library::loadFromFile(const string& filename) {
     string line;
     while (getline(inFile, line)) {
         if (!line.empty()) {
-            books.push_back(Book::deserialize(line));
+            Book book = Book::deserialize(line);
+            books.push_back(book);
+            
+            // Update nextBookId để tránh trùng ID
+            string bookId = book.getBookId();
+            if (bookId.length() > 1 && bookId[0] == 'B') {
+                int id = stoi(bookId.substr(1));
+                if (id >= nextBookId) {
+                    nextBookId = id + 1;
+                }
+            }
         }
     }
     
     inFile.close();
-    return true;
+    return !books.empty();
 }
 
