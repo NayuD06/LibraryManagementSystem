@@ -25,10 +25,10 @@ void Library::addNewBook(const string& title, const string& author, const string
                         int year, const string& ISBN, const vector<string>& categories,
                         const vector<string>& keywords, int quantity, int pages,
                         const string& briefDesc, const string& detailedDesc,
-                        double rentalPrice, double purchasePrice) {
+                        double rentalPrice) {
     string bookId = generateBookId();
     Book newBook(bookId, title, author, publisher, year, ISBN, categories, keywords,
-                quantity, pages, briefDesc, detailedDesc, rentalPrice, purchasePrice);
+                quantity, pages, briefDesc, detailedDesc, rentalPrice);
     books.push_back(newBook);
     cout << "Book \"" << title << "\" added with ID: " << bookId << "\n";
 }
@@ -37,7 +37,7 @@ bool Library::updateBook(const string& bookId, const string& newTitle, const str
                         const string& newPublisher, int newYear, const vector<string>& newCategories,
                         const vector<string>& newKeywords, int newQuantity, int newPages,
                         const string& newBriefDesc, const string& newDetailedDesc,
-                        double newRentalPrice, double newPurchasePrice) {
+                        double newRentalPrice) {
     for (Book& book : books) {
         if (book.getBookId() == bookId) {
             book.setTitle(newTitle);
@@ -51,7 +51,6 @@ bool Library::updateBook(const string& bookId, const string& newTitle, const str
             book.setBriefDescription(newBriefDesc);
             book.setDetailedDescription(newDetailedDesc);
             book.setRentalPrice(newRentalPrice);
-            book.setPurchasePrice(newPurchasePrice);
             cout << "Book with ID " << bookId << " updated successfully.\n";
             return true;
         }

@@ -1,0 +1,7 @@
+1|Nguyen Van Admin|admin@library.com|418<;dgf|0901234567|Admin
+2|Tran Thi Thu|librarian1@library.com|9<7dgf|0912345678|Librarian
+3|Le Van Binh|librarian2@library.com|9<7dgf|0923456789|Librarian
+4|Pham Minh Hieu|reader1@library.com|'041dgf|0934567890|User
+5|Hoang Thi Lan|reader2@library.com|'041dgf|0945678901|User
+6|Vo Quoc Bao|reader3@library.com|'041dgf|0956789012|User
+7|An|an@gmail.com|dgfa`c|0988067656|User

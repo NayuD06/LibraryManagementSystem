@@ -116,7 +116,7 @@ int Order::calculateOverdueDays() const {
 	return (diffDays > 0) ? diffDays : 0;
 }
 
-double Order::calculateFine(double dailyFineRate, double bookPrice) const {
+double Order::calculateFine(double dailyFineRate) const {
 	double totalFine = 0.0;
 	
 	// Phí phạt quá hạn
@@ -125,11 +125,12 @@ double Order::calculateFine(double dailyFineRate, double bookPrice) const {
 		totalFine += overdueDays * dailyFineRate;
 	}
 	
-	// Phí đền bù nếu sách hỏng/mất
+	// Phí đền bù nếu sách hỏng/mất (ước tính giá sách = 100 * rentalPrice)
+	double estimatedBookValue = dailyFineRate * 100; // Giả định giá sách = 100 ngày thuê
 	if (bookCondition == "DAMAGED") {
-		totalFine += bookPrice * 0.5; // 50% giá sách nếu hỏng
+		totalFine += estimatedBookValue * 0.5; // 50% giá sách nếu hỏng
 	} else if (bookCondition == "LOST") {
-		totalFine += bookPrice; // 100% giá sách nếu mất
+		totalFine += estimatedBookValue; // 100% giá sách nếu mất
 	}
 	
 	return totalFine;

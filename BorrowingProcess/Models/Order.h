@@ -70,5 +70,5 @@ public:
 	void displayOrderInfo() const;
 	bool isOverdue() const;
 	int calculateOverdueDays() const;
-	double calculateFine(double dailyFineRate, double bookPrice) const;
+	double calculateFine(double dailyFineRate) const;
 };
