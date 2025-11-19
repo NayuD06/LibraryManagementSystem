@@ -35,9 +35,7 @@ bool UserService::registerUser(const string& fullName, const string& dateOfBirth
                  email, password, role);
     users.push_back(newUser);
     
-    cout << "User registered successfully!\n";
-    cout << "User ID: " << newUser.getId() << "\n";
-    cout << "Email: " << email << "\n";
+    // Không hiển thị thông báo khi tạo sample accounts
     return true;
 }
 
@@ -211,14 +209,12 @@ bool UserService::saveToFile(const string& filename) const {
     }
     
     outFile.close();
-    cout << "User data saved to " << filename << "\n";
     return true;
 }
 
 bool UserService::loadFromFile(const string& filename) {
     ifstream inFile(filename);
     if (!inFile) {
-        cerr << "Warning: Could not open file " << filename << " for reading.\n";
         return false;
     }
     
@@ -234,6 +230,5 @@ bool UserService::loadFromFile(const string& filename) {
     }
     
     inFile.close();
-    cout << "Loaded " << users.size() << " users from " << filename << "\n";
     return true;
 }

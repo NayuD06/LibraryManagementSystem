@@ -329,14 +329,12 @@ bool Library::saveToFile(const string& filename) const {
     }
     
     outFile.close();
-    cout << "Library data saved to " << filename << "\n";
     return true;
 }
 
 bool Library::loadFromFile(const string& filename) {
     ifstream inFile(filename);
     if (!inFile) {
-        cerr << "Warning: Could not open file " << filename << " for reading.\n";
         return false;
     }
     
@@ -349,7 +347,6 @@ bool Library::loadFromFile(const string& filename) {
     }
     
     inFile.close();
-    cout << "Loaded " << books.size() << " books from " << filename << "\n";
     return true;
 }
 
