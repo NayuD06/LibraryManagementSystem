@@ -6,8 +6,6 @@
 // - userId: Mã người mượn
 // - bookId: Mã sách
 // - status: Trạng thái (PENDING/ISSUED/RETURNED/OVERDUE/RESERVED)
-// - rating: Đánh giá sách (1-5 sao)
-// - review: Nhận xét của người mượn
 // - borrowDate: Ngày đăng ký mượn
 // - issueDate: Ngày cho mượn thực tế
 // - dueDate: Ngày hạn trả
@@ -25,8 +23,6 @@ private:
 	std::string userId;
 	std::string bookId;
 	std::string status;
-	int rating;
-	std::string review;
 	std::string borrowDate;
 	std::string issueDate;
 	std::string dueDate;
@@ -44,8 +40,6 @@ public:
 		  std::string issueDate = "",
 		  std::string dueDate = "",
 		  std::string returnDate = "",
-		  int rating = 0,
-		  std::string review = "",
 		  int renewalPeriod = 0,
 		  std::string bookCondition = "GOOD");
 
@@ -53,8 +47,6 @@ public:
 	const std::string &getUserId() const;
 	const std::string &getBookId() const;
 	const std::string &getStatus() const;
-	int getRating() const;
-	const std::string &getReview() const;
 	const std::string &getBorrowDate() const;
 	const std::string &getIssueDate() const;
 	const std::string &getDueDate() const;
@@ -63,8 +55,6 @@ public:
 	const std::string &getBookCondition() const;
 
 	void setStatus(const std::string &value);
-	void setRating(int value);
-	void setReview(const std::string &value);
 	void setIssueDate(const std::string &value);
 	void setDueDate(const std::string &value);
 	void setReturnDate(const std::string &value);
@@ -74,10 +64,11 @@ public:
 	// Methods theo class diagram
 	void createOrder();
 	void updateStatus(const std::string &newStatus);
-	void addReview(int rating, const std::string &reviewText);
 	void renewOrder();
 	
 	// Helper methods
 	void displayOrderInfo() const;
 	bool isOverdue() const;
+	int calculateOverdueDays() const;
+	double calculateFine(double dailyFineRate, double bookPrice) const;
 };

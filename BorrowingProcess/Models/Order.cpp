@@ -12,8 +12,6 @@ Order::Order(string orderId,
 	     string issueDate,
 	     string dueDate,
 	     string returnDate,
-	     int rating,
-	     string review,
 	     int renewalPeriod,
 	     string bookCondition)
 	: orderId(std::move(orderId)),
@@ -24,8 +22,6 @@ Order::Order(string orderId,
 	  issueDate(std::move(issueDate)),
 	  dueDate(std::move(dueDate)),
 	  returnDate(std::move(returnDate)),
-	  rating(rating),
-	  review(std::move(review)),
 	  renewalPeriod(renewalPeriod),
 	  bookCondition(std::move(bookCondition)) {}
 
@@ -33,8 +29,6 @@ const string &Order::getOrderId() const { return orderId; }
 const string &Order::getUserId() const { return userId; }
 const string &Order::getBookId() const { return bookId; }
 const string &Order::getStatus() const { return status; }
-int Order::getRating() const { return rating; }
-const string &Order::getReview() const { return review; }
 const string &Order::getBorrowDate() const { return borrowDate; }
 const string &Order::getIssueDate() const { return issueDate; }
 const string &Order::getDueDate() const { return dueDate; }
@@ -43,8 +37,6 @@ int Order::getRenewalPeriod() const { return renewalPeriod; }
 const string &Order::getBookCondition() const { return bookCondition; }
 
 void Order::setStatus(const string &value) { status = value; }
-void Order::setRating(int value) { rating = value; }
-void Order::setReview(const string &value) { review = value; }
 void Order::setIssueDate(const string &value) { issueDate = value; }
 void Order::setDueDate(const string &value) { dueDate = value; }
 void Order::setReturnDate(const string &value) { returnDate = value; }
@@ -59,13 +51,6 @@ void Order::createOrder() {
 void Order::updateStatus(const string &newStatus) {
 	status = newStatus;
 	cout << "Order " << orderId << " status updated to: " << status << endl;
-}
-
-void Order::addReview(int ratingValue, const string &reviewText) {
-	rating = ratingValue;
-	review = reviewText;
-	cout << "Review added to order " << orderId << " with rating " << rating 
-	     << ": " << review << endl;
 }
 
 void Order::renewOrder() {
@@ -90,14 +75,42 @@ void Order::displayOrderInfo() const {
 		cout << "Return Date: " << returnDate << endl;
 		cout << "Book Condition: " << bookCondition << endl;
 	}
-	if (rating > 0) {
-		cout << "Rating: " << rating << "/5 stars\n";
-		cout << "Review: " << review << endl;
-	}
 	cout << "Renewal Count: " << renewalPeriod << endl;
 }
 
 bool Order::isOverdue() const {
 	// Simple check - trong thực tế nên so sánh với ngày hiện tại
 	return status == "OVERDUE";
+}
+
+int Order::calculateOverdueDays() const {
+	// Tính số ngày quá hạn (simplified - giả định mỗi ngày cách nhau 1 đơn vị)
+	if (returnDate.empty() || dueDate.empty()) return 0;
+	
+	// So sánh chuỗi ngày (format: YYYY-MM-DD)
+	if (returnDate > dueDate) {
+		// Simplified: giả định mỗi ngày = 1
+		// Trong thực tế cần parse date và tính chênh lệch
+		return 5; // Placeholder - trả về số ngày cố định để demo
+	}
+	return 0;
+}
+
+double Order::calculateFine(double dailyFineRate, double bookPrice) const {
+	double totalFine = 0.0;
+	
+	// Phí phạt quá hạn
+	int overdueDays = calculateOverdueDays();
+	if (overdueDays > 0) {
+		totalFine += overdueDays * dailyFineRate;
+	}
+	
+	// Phí đền bù nếu sách hỏng/mất
+	if (bookCondition == "DAMAGED") {
+		totalFine += bookPrice * 0.5; // 50% giá sách nếu hỏng
+	} else if (bookCondition == "LOST") {
+		totalFine += bookPrice; // 100% giá sách nếu mất
+	}
+	
+	return totalFine;
 }

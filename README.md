@@ -9,7 +9,7 @@ Hệ thống thiết kế theo kiến trúc phân quyền phân cấp (Độc gi
 ## Tính Năng Chính
 
 ### 1. Phân Quyền Theo Vai Trò (Kế Thừa Phân Cấp)
-- **Độc giả**: 18 chức năng cơ bản (xem, tìm, mượn, đặt trước, yêu cầu, đánh giá, quản lý hồ sơ)
+- **Độc giả**: 17 chức năng cơ bản (xem, tìm, mượn, đặt trước, yêu cầu, quản lý hồ sơ)
 - **Thủ thư**: Kế thừa Độc giả + 16 chức năng quản lý (thêm/sửa/xóa sách, cho mượn/thu hồi, duyệt yêu cầu, báo cáo)
 - **Quản trị**: Kế thừa Thủ thư + Độc giả + 16 chức năng admin (tạo tài khoản, quản lý user, báo cáo hệ thống, backup)
 
@@ -37,31 +37,28 @@ Hệ thống thiết kế theo kiến trúc phân quyền phân cấp (Độc gi
 - Xem/hủy đặt trước và yêu cầu
 - Thủ thư duyệt/từ chối yêu cầu
 
-### 6. Đánh Giá & Review
-- Đánh giá 1-5 sao và viết review cho sách đã trả
-
-### 7. Báo Cáo (Thủ thư & Admin)
+### 6. Báo Cáo (Thủ thư & Admin)
 - Xu hướng mượn, tồn kho, thống kê tổng quan
 - Top 10 sách/user phổ biến nhất
 - Danh mục phổ biến, sách quá hạn
 
-### 8. Tìm Kiếm & Khám Phá
+### 7. Tìm Kiếm & Khám Phá
 - Tìm theo tên/tác giả/từ khóa/danh mục
 - Sắp xếp theo độ phổ biến (lượt xem)
 - Lọc sách còn sẵn
 
-### 9. Lưu Trữ & Backup
+### 8. Lưu Trữ & Backup
 - Tự động lưu/load dữ liệu từ file
 - Tạo tài khoản mẫu khi chạy lần đầu
 - Backup/restore thủ công
 
 ## Phân Quyền Theo Vai Trò
 
-### Độc Giả (18 Chức Năng)
+### Độc Giả (17 Chức Năng)
 1-5. Xem sách có sẵn, tìm theo tên/tác giả, xem theo danh mục, xem sách phổ biến
 6-9. Mượn sách, xem lịch sử, gia hạn, trả sách
 10-14. Đặt trước, xem đặt trước, yêu cầu sách mới, xem yêu cầu, hủy yêu cầu
-15-18. Đánh giá sách, xem hồ sơ, cập nhật hồ sơ, đổi mật khẩu
+15-17. Xem hồ sơ, cập nhật hồ sơ, đổi mật khẩu
 
 ### Thủ Thư (Tất cả chức năng Độc giả + 16 Chức Năng Quản Lý)
 **Quản lý sách:** Thêm/sửa/xóa sách, xem tất cả, tìm kiếm nâng cao
@@ -139,13 +136,12 @@ LibraryManagementSystem/
 ├── BorrowingProcess/
 │   └── Models/
 │       ├── Order.h                   # Borrowing order model
-│       │                             # - Properties: orderId, userId, bookId, status, dates, rating, review
+│       │                             # - Properties: orderId, userId, bookId, status, dates
 │       │                             # - Status: PENDING, ISSUED, RETURNED, OVERDUE, RESERVED
-│       │                             # - Methods: createOrder(), updateStatus(), addReview(), renewOrder()
+│       │                             # - Methods: createOrder(), updateStatus(), renewOrder()
 │       │
 │       ├── Order.cpp                 # Order implementation
 │       │                             # - Order lifecycle management
-│       │                             # - Review and rating system
 │       │
 │       ├── Reservation.h             # Book reservation model
 │       │                             # - Properties: reservationId, userId, bookId, dates, status, queuePosition
@@ -182,7 +178,7 @@ LibraryManagementSystem/
 
 **Book:** ID, tên, tác giả, NXB, năm XB, ISBN, danh mục, keywords, số lượng tổng/còn, trang, mô tả ngắn/dài, trạng thái, tình trạng, lượt xem, giá thuê/mua
 
-**Order:** ID đơn, ID user, ID sách, ngày mượn/cho mượn/hạn trả/trả, trạng thái, tình trạng sách, số lần gia hạn, đánh giá, review
+**Order:** ID đơn, ID user, ID sách, ngày mượn/cho mượn/hạn trả/trả, trạng thái, tình trạng sách, số lần gia hạn
 
 **Reservation:** ID đặt, ID user, ID sách, ngày đặt, ngày hết hạn, trạng thái, vị trí hàng đợi
 
@@ -253,9 +249,8 @@ Hệ thống tự động tạo 6 tài khoản mẫu khi chạy lần đầu (n�
 - Option 12: Yêu cầu sách mới → Nhập tên, tác giả, ISBN
 - Option 13-14: Xem/hủy yêu cầu
 
-**Đánh giá & Hồ sơ:**
-- Option 15: Đánh giá sách → Nhập Order ID → Chọn 1-5 sao + viết review
-- Option 16-18: Xem hồ sơ, cập nhật hồ sơ, đổi mật khẩu
+**Hồ sơ:**
+- Option 15-17: Xem hồ sơ, cập nhật hồ sơ, đổi mật khẩu
 
 ### Thủ Thư (Tất cả chức năng Độc giả + 16 Quản Lý)
 
@@ -288,7 +283,7 @@ Hệ thống tự động tạo 6 tài khoản mẫu khi chạy lần đầu (n�
 **1. Mượn và trả sách (Độc giả):**
 ```
 Login → Tìm sách (Option 2) → Mượn (Option 6 + Book ID) → 
-Xem lịch sử (Option 7) → Trả (Option 9 + Order ID) → Đánh giá (Option 15)
+Xem lịch sử (Option 7) → Trả (Option 9 + Order ID)
 ```
 
 **2. Thêm sách và cho mượn (Thủ thư):**
@@ -308,7 +303,7 @@ Thống kê (Option 6) → Backup (Option 12 + tên file)
 ### Cấu Trúc main.cpp (1,108 dòng)
 - Dòng 1-34: Headers, includes, khai báo dữ liệu global
 - Dòng 36-62: Helper functions (prompt, toString, date)
-- Dòng 64-429: Menu Độc giả (18 chức năng)
+- Dòng 64-429: Menu Độc giả (17 chức năng)
 - Dòng 431-763: Menu Thủ thư (kế thừa Độc giả + 16 quản lý)
 - Dòng 765-987: Menu Admin (kế thừa Thủ thư + Độc giả + 16 admin)
 - Dòng 989-1108: Hàm main (khởi tạo, login/register, routing)

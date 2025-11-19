@@ -85,10 +85,9 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
         cout << "12. Request a new book\n";
         cout << "13. View my book requests\n";
         cout << "14. Cancel a request\n";
-        cout << "15. Rate and review a book\n";
-        cout << "16. View my profile\n";
-        cout << "17. Update my profile\n";
-        cout << "18. Change password\n";
+        cout << "15. View my profile\n";
+        cout << "16. Update my profile\n";
+        cout << "17. Change password\n";
         cout << "0. Logout\n";
         cout << "Enter choice: ";
         
@@ -230,14 +229,50 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
                     order.getUserId() == toString(currentUser->getId())) {
                     
                     if (order.getStatus() == "ISSUED" || order.getStatus() == "OVERDUE") {
+                        // Hỏi tình trạng sách
+                        cout << "Book condition (1=GOOD, 2=DAMAGED, 3=LOST): ";
+                        int condChoice;
+                        cin >> condChoice;
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                        
+                        string condition = (condChoice == 2) ? "DAMAGED" : 
+                                         (condChoice == 3) ? "LOST" : "GOOD";
+                        order.setBookCondition(condition);
                         order.setReturnDate(getCurrentDate());
                         order.setStatus("RETURNED");
                         
                         // Tăng số sách có sẵn
                         Book* book = library.findBookById(order.getBookId());
-                        if (book) book->increaseAvailableQuantity();
+                        if (book) {
+                            book->increaseAvailableQuantity();
+                            
+                            // Tính phí phạt
+                            double fine = order.calculateFine(book->getRentalPrice(), book->getPurchasePrice());
+                            
+                            cout << "\n=== Return Summary ===\n";
+                            cout << "Book returned successfully!\n";
+                            cout << "Book condition: " << condition << "\n";
+                            
+                            if (fine > 0) {
+                                cout << "--- Fine Details ---\n";
+                                int overdueDays = order.calculateOverdueDays();
+                                if (overdueDays > 0) {
+                                    cout << "Overdue days: " << overdueDays << "\n";
+                                    cout << "Daily fine rate: " << book->getRentalPrice() << " VND\n";
+                                    cout << "Overdue fine: " << (overdueDays * book->getRentalPrice()) << " VND\n";
+                                }
+                                if (condition == "DAMAGED") {
+                                    cout << "Damaged book compensation (50%): " << (book->getPurchasePrice() * 0.5) << " VND\n";
+                                } else if (condition == "LOST") {
+                                    cout << "Lost book compensation (100%): " << book->getPurchasePrice() << " VND\n";
+                                }
+                                cout << "-------------------\n";
+                                cout << "TOTAL FINE: " << fine << " VND\n";
+                            } else {
+                                cout << "No fines. Thank you!\n";
+                            }
+                        }
                         
-                        cout << "Book returned successfully!\n";
                         found = true;
                     } else {
                         cout << "Cannot return this order (status: " << order.getStatus() << ")\n";
@@ -350,43 +385,12 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
             break;
         }
         
-        case 15: { // Đánh giá sách
-            string orderId = prompt("Enter Order ID: ");
-            bool found = false;
-            
-            for (auto &order : orders) {
-                if (order.getOrderId() == orderId && 
-                    order.getUserId() == toString(currentUser->getId())) {
-                    
-                    if (order.getStatus() == "RETURNED") {
-                        cout << "Rate (1-5 stars): ";
-                        int rating;
-                        cin >> rating;
-                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                        
-                        string review = prompt("Review: ");
-                        order.addReview(rating, review);
-                        
-                        cout << "Review added successfully!\n";
-                        found = true;
-                    } else {
-                        cout << "Can only review returned books.\n";
-                        found = true;
-                    }
-                    break;
-                }
-            }
-            
-            if (!found) cout << "Order not found!\n";
-            break;
-        }
-        
-        case 16: { // Xem hồ sơ
+        case 15: { // Xem hồ sơ
             currentUser->displayUserInfo();
             break;
         }
         
-        case 17: { // Cập nhật hồ sơ
+        case 16: { // Cập nhật hồ sơ
             cout << "\n--- Update Profile (leave blank to keep current value) ---\n";
             string name = prompt("Full name: ");
             string dob = prompt("Date of Birth (YYYY-MM-DD): ");
@@ -409,7 +413,7 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
             break;
         }
         
-        case 18: { // Đổi mật khẩu
+        case 17: { // Đổi mật khẩu
             string oldPassword = prompt("Old password: ");
             string newPassword = prompt("New password: ");
             
@@ -635,13 +639,49 @@ void librarianMenu(User* currentUser, Library &library, UserService &userService
             for (auto &order : orders) {
                 if (order.getOrderId() == orderId) {
                     if (order.getStatus() == "ISSUED" || order.getStatus() == "OVERDUE") {
+                        // Hỏi tình trạng sách
+                        cout << "Book condition (1=GOOD, 2=DAMAGED, 3=LOST): ";
+                        int condChoice;
+                        cin >> condChoice;
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                        
+                        string condition = (condChoice == 2) ? "DAMAGED" : 
+                                         (condChoice == 3) ? "LOST" : "GOOD";
+                        order.setBookCondition(condition);
                         order.setReturnDate(getCurrentDate());
                         order.setStatus("RETURNED");
                         
                         Book* book = library.findBookById(order.getBookId());
-                        if (book) book->increaseAvailableQuantity();
+                        if (book) {
+                            book->increaseAvailableQuantity();
+                            
+                            // Tính phí phạt
+                            double fine = order.calculateFine(book->getRentalPrice(), book->getPurchasePrice());
+                            
+                            cout << "\n=== Return Summary ===\n";
+                            cout << "Book return processed successfully!\n";
+                            cout << "Book condition: " << condition << "\n";
+                            
+                            if (fine > 0) {
+                                cout << "--- Fine Details ---\n";
+                                int overdueDays = order.calculateOverdueDays();
+                                if (overdueDays > 0) {
+                                    cout << "Overdue days: " << overdueDays << "\n";
+                                    cout << "Daily fine rate: " << book->getRentalPrice() << " VND\n";
+                                    cout << "Overdue fine: " << (overdueDays * book->getRentalPrice()) << " VND\n";
+                                }
+                                if (condition == "DAMAGED") {
+                                    cout << "Damaged book compensation (50%): " << (book->getPurchasePrice() * 0.5) << " VND\n";
+                                } else if (condition == "LOST") {
+                                    cout << "Lost book compensation (100%): " << book->getPurchasePrice() << " VND\n";
+                                }
+                                cout << "-------------------\n";
+                                cout << "TOTAL FINE: " << fine << " VND\n";
+                            } else {
+                                cout << "No fines. Thank you!\n";
+                            }
+                        }
                         
-                        cout << "Book return processed successfully!\n";
                         found = true;
                     } else {
                         cout << "Order status: " << order.getStatus() << "\n";
@@ -1011,14 +1051,10 @@ int main() {
     
     // Nếu chưa có dữ liệu, tạo sample accounts
     if (!dataLoaded || userService.getAllUsers().empty()) {
-        cout << "Creating sample accounts...\n";
-        
-        // Tạo Admin account
         userService.registerUser("Nguyen Van Admin", "1990-01-01", Gender::Male,
                                 "123 Admin St", "0901234567", "admin@library.com",
                                 "admin123", Role::Admin);
         
-        // Tạo Librarian accounts
         userService.registerUser("Tran Thi Thu", "1995-05-15", Gender::Female,
                                 "456 Librarian Ave", "0912345678", "librarian1@library.com",
                                 "lib123", Role::Librarian);
@@ -1027,7 +1063,6 @@ int main() {
                                 "789 Librarian Blvd", "0923456789", "librarian2@library.com",
                                 "lib123", Role::Librarian);
         
-        // Tạo Reader accounts
         userService.registerUser("Pham Minh Hieu", "2000-07-10", Gender::Male,
                                 "111 Reader St", "0934567890", "reader1@library.com",
                                 "read123", Role::Reader);
@@ -1039,11 +1074,6 @@ int main() {
         userService.registerUser("Vo Quoc Bao", "2001-09-08", Gender::Male,
                                 "333 Reader Blvd", "0956789012", "reader3@library.com",
                                 "read123", Role::Reader);
-        
-        cout << "Sample accounts created successfully!\n";
-        cout << "Admin: admin@library.com / admin123\n";
-        cout << "Librarian: librarian1@library.com / lib123\n";
-        cout << "Reader: reader1@library.com / read123\n\n";
     }
     
     User* currentUser = nullptr;
