@@ -1,0 +1,19 @@
+# Build artifacts
+*.exe
+*.o
+*.obj
+*.out
+LibraryManagement
+
+# Git
+.git
+.gitignore
+
+# Documentation
+DOCKER.md
+
+# IDE
+.vscode
+.vs
+*.swp
+*.swo

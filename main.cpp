@@ -1,9 +1,6 @@
-﻿// ===== LIBRARY MANAGEMENT SYSTEM - MAIN FILE =====
-// File chính điều khiển toàn bộ ứng dụng quản lý thư viện
-// Chức năng:
-// - Hiển thị menu chính (Login/Register/Exit)
-// - Điều hướng đến menu theo vai trò (Reader/Librarian/Admin)
-// - Quản lý Library, User, Order, Reservation, BookRequest
+﻿// File main - chương trình quản lý thư viện
+// Xử lý login, menu chính và điều hướng theo role
+// Quản lý: User, Book, Order, Reservation, BookRequest
 
 #include <iostream>
 #include <fstream>
@@ -25,22 +22,19 @@
 
 using namespace std;
 
-// ===== GLOBAL DATA =====
-// Các container lưu trữ dữ liệu trong bộ nhớ
-vector<Order> orders;              // Danh sách đơn mượn
-vector<Reservation> reservations;  // Danh sách đặt trước
-vector<BookRequest> bookRequests;  // Danh sách yêu cầu sách
-int nextOrderId = 1;               // ID tiếp theo cho Order
-int nextReservationId = 1;         // ID tiếp theo cho Reservation
-int nextRequestId = 1;             // ID tiếp theo cho BookRequest
+// Biến toàn cục - lưu data trong runtime
+vector<Order> orders;
+vector<Reservation> reservations;
+vector<BookRequest> bookRequests;
+int nextOrderId = 1;
+int nextReservationId = 1;
+int nextRequestId = 1;
 
-// ===== AUTO-SAVE FUNCTION =====
-// Tự động lưu dữ liệu sau mỗi thao tác để tránh mất data
+// Hàm tự động lưu file sau mỗi thao tác
 void autoSave(Library& library, UserService& userService) {
     library.saveToFile("books.txt");
     userService.saveToFile("users.txt");
     
-    // Save orders
     ofstream ordersFile("orders.txt");
     if (ordersFile.is_open()) {
         for (const Order& order : orders) {
@@ -58,8 +52,7 @@ void autoSave(Library& library, UserService& userService) {
         ordersFile.close();
     }
     
-    // Save reservations
-    ofstream reservationsFile("reservations.txt");
+    ofstream reservationsFile("database/reservations.txt");
     if (reservationsFile.is_open()) {
         for (const Reservation& res : reservations) {
             reservationsFile << res.getReservationId() << "|"
@@ -71,8 +64,7 @@ void autoSave(Library& library, UserService& userService) {
         reservationsFile.close();
     }
     
-    // Save book requests
-    ofstream requestsFile("bookrequests.txt");
+    ofstream requestsFile("database/bookrequests.txt");
     if (requestsFile.is_open()) {
         for (const BookRequest& req : bookRequests) {
             requestsFile << req.getRequestId() << "|"
@@ -86,14 +78,13 @@ void autoSave(Library& library, UserService& userService) {
     }
 }
 
-// ===== LOAD DATA FUNCTIONS =====
-// Load orders từ file
+// Đọc dữ liệu orders từ file
 void loadOrders() {
-    ifstream ordersFile("orders.txt");
+    ifstream ordersFile("database/orders.txt");
     if (ordersFile.is_open()) {
         string line;
         while (getline(ordersFile, line)) {
-            if (line.empty()) continue; // Skip empty lines
+            if (line.empty()) continue;
             
             stringstream ss(line);
             string orderId, userId, bookId, status, borrowDate, issueDate, dueDate, returnDate, bookCondition;
@@ -115,9 +106,9 @@ void loadOrders() {
             Order order(orderId, userId, bookId, status, borrowDate, issueDate, dueDate, returnDate, renewalPeriod, bookCondition);
             orders.push_back(order);
             
-            // Update nextOrderId
+            // Cập nhật nextOrderId
             if (!orderId.empty() && orderId.length() > 1 && orderId[0] == 'O') {
-                int id = stoi(orderId.substr(3)); // "ORD1" -> skip "ORD", get "1"
+                int id = stoi(orderId.substr(3));
                 if (id >= nextOrderId) nextOrderId = id + 1;
             }
         }
@@ -125,9 +116,9 @@ void loadOrders() {
     }
 }
 
-// Load reservations từ file
+// Đọc dữ liệu reservations từ file
 void loadReservations() {
-    ifstream reservationsFile("reservations.txt");
+    ifstream reservationsFile("database/reservations.txt");
     if (reservationsFile.is_open()) {
         string line;
         while (getline(reservationsFile, line)) {
@@ -156,9 +147,9 @@ void loadReservations() {
     }
 }
 
-// Load book requests từ file
+// Đọc dữ liệu book requests từ file
 void loadBookRequests() {
-    ifstream requestsFile("bookrequests.txt");
+    ifstream requestsFile("database/bookrequests.txt");
     if (requestsFile.is_open()) {
         string line;
         while (getline(requestsFile, line)) {
@@ -188,10 +179,9 @@ void loadBookRequests() {
     }
 }
 
-// ===== HELPER FUNCTIONS =====
-// Hàm tiện ích chung
+// Các hàm tiện ích
 
-// Hàm nhận input từ người dùng
+// Nhận input từ user
 string prompt(const string &message) {
     cout << message;
     string value;
@@ -199,14 +189,14 @@ string prompt(const string &message) {
     return value;
 }
 
-// Hàm chuyển int thành string
+// Chuyển int sang string
 string toString(int num) {
     stringstream ss;
     ss << num;
     return ss.str();
 }
 
-// Hàm lấy ngày hiện tại
+// Lấy ngày hiện tại
 string getCurrentDate() {
     time_t now = time(0);
     tm* ltm = localtime(&now);
@@ -218,7 +208,7 @@ string getCurrentDate() {
     return string(buffer);
 }
 
-// Hàm tính ngày đến hạn (thêm số ngày vào ngày hiện tại)
+// Tính ngày đến hạn (cộng thêm số ngày)
 string calculateDueDate(int days) {
     time_t now = time(0);
     now += days * 24 * 60 * 60; // Thêm số giây
@@ -231,13 +221,7 @@ string calculateDueDate(int days) {
     return string(buffer);
 }
 
-// ===== READER MENU =====
-// Chức năng dành cho người đọc (Reader):
-// - Xem sách có sẵn, tìm kiếm sách
-// - Mượn sách, xem lịch sử mượn
-// - Đặt trước sách, yêu cầu sách mới
-// - Gia hạn sách, đánh giá sách
-// - Xem thông tin cá nhân
+// Menu dành cho User (Reader)
 void readerMenu(User* currentUser, Library &library, UserService &userService) {
     bool running = true;
     while (running) {
@@ -475,13 +459,7 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
     }
 }
 
-// ===== LIBRARIAN MENU =====
-// Chức năng dành cho thủ thư (Librarian):
-// - Tất cả chức năng của Reader
-// - Thêm/sửa/xóa sách
-// - Xử lý mượn/trả sách cho người dùng
-// - Duyệt yêu cầu sách
-// - Tạo báo cáo cơ bản
+// Menu dành cho Librarian (thủ thư)
 void librarianMenu(User* currentUser, Library &library, UserService &userService) {
     bool running = true;
     while (running) {
@@ -896,13 +874,7 @@ void librarianMenu(User* currentUser, Library &library, UserService &userService
     }
 }
 
-// ===== ADMIN MENU =====
-// Chức năng dành cho quản trị viên (Admin):
-// - Tất cả chức năng của Librarian và Reader
-// - Tạo tài khoản Librarian
-// - Quản lý người dùng (xem, xóa, kích hoạt)
-// - Tạo báo cáo tổng hợp
-// - Backup và restore hệ thống
+// Menu dành cho Admin (quản trị viên)
 void adminMenu(User* currentUser, Library &library, UserService &userService) {
     bool running = true;
     while (running) {
@@ -1109,18 +1081,17 @@ void adminMenu(User* currentUser, Library &library, UserService &userService) {
     }
 }
 
-// ===== MAIN FUNCTION =====
-// Hàm chính: Khởi tạo hệ thống và vòng lặp menu
+// Hàm main - khởi tạo hệ thống và vòng lặp chính
 int main() {
     try {
-        // Khởi tạo các đối tượng quản lý
+        // Khởi tạo đối tượng quản lý
         UserService userService;
         Library library;
         
         // Load dữ liệu từ file (nếu có)
         
-        bool dataLoaded = userService.loadFromFile("users.txt");
-        library.loadFromFile("books.txt");
+        bool dataLoaded = userService.loadFromFile("database/users.txt");
+        library.loadFromFile("database/books.txt");
         loadOrders();
         loadReservations();
         loadBookRequests();
@@ -1226,8 +1197,8 @@ int main() {
     }
     
     // Lưu dữ liệu trước khi thoát
-    userService.saveToFile("users.txt");
-    library.saveToFile("books.txt");
+    userService.saveToFile("database/users.txt");
+    library.saveToFile("database/books.txt");
     
     cout << "\n========================================\n";
     cout << "  Thank you for using our system!\n";
