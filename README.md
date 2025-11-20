@@ -239,7 +239,7 @@ Hệ thống **tự động lưu** dữ liệu ngay sau các thao tác:
 
 - **Khuyến nghị:** Build và chạy trực tiếp trên Windows bằng g++
 - **Để chia sẻ:** Gửi toàn bộ source code + file `LibraryManagement.exe`
-- **Docker:** Có sẵn Dockerfile để nộp bài nhưng **không khuyến nghị** chạy thực tế
+- **Docker:** Có sẵn Dockerfile nhưng **không khuyến nghị** chạy thực tế vì bị lỗi console
 
 ---
 
