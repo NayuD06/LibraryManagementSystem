@@ -229,21 +229,9 @@ Hệ thống **tự động lưu** dữ liệu ngay sau các thao tác:
 
 → **Không cần save thủ công**, data được persist tự động vào 5 file .txt
 
-## Test Cases
-
-Hệ thống được test với 8 test cases chính:
-1. **TC01**: Issue book (Librarian) - Kiểm tra mượn sách thành công
-2. **TC02**: Return on-time (Librarian) - Trả sách đúng hạn, không phạt
-3. **TC03**: Return overdue + damaged - Tính phí trễ hạn + bồi thường hư hỏng
-4. **TC04**: Renew loan (Librarian, within limit) - Gia hạn lần 1 (≤2)
-5. **TC05**: Renew loan (Librarian, exceed limit) - Gia hạn lần 3 bị từ chối
-6. **TC06**: Reserve book - Đặt trước sách thành công
-7. **TC07**: Duplicate reservation - Kiểm tra đặt trước trùng lặp (known issue: hiện cho phép)
-8. **TC08**: View overdue loans - Hiển thị đơn quá hạn
-
 ## Known Issues
 
-- **Duplicate reservations**: Hệ thống hiện cho phép user đặt trước cùng 1 cuốn sách nhiều lần (TC07)
+- **Duplicate reservations**: Hệ thống hiện cho phép user đặt trước cùng 1 cuốn sách nhiều lần 
 - **Book status**: Sách với quantity=0 tự động chuyển sang trạng thái "Borrowed"
 - **Docker incompatibility**: Console app không chạy ổn định trong Docker (input/output errors, infinite menu loop)
 
