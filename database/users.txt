@@ -2,3 +2,4 @@
 2|Tran Thi Thu|librarian1@library.com|9<7dgf|0912345678|Librarian
 4|Pham Minh Hieu|reader1@library.com|'041dgf|0934567890|User
 5|An|an@gmail.com|dgfa`c|0987676545|User
+6|NayuD|An@gmail.com|geeggeec|098877887|User
