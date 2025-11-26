@@ -7,13 +7,13 @@ Hệ thống quản lý thư viện C++ console với giao diện tiếng Anh, p
 - **Quản lý sách**: Thêm/sửa/xóa, tìm kiếm, theo dõi tồn kho
 - **Quản lý user**: Đăng ký/đăng nhập, phân quyền, cập nhật hồ sơ
 - **Mượn/trả sách**: Mượn 14 ngày, gia hạn, tính phí phạt tự động
-- **Đặt trước & yêu cầu**: Đặt trước sách, yêu cầu sách mới, duyệt/từ chối
+- **Đặt trước sách**: Đặt trước sách đang được mượn (có thể sửa/xóa)
 - **Báo cáo**: Thống kê tổng quan, top sách/user, sách quá hạn
 - **Auto-save**: Tự động lưu data sau mỗi thao tác (mượn/trả/thêm/sửa/xóa)
 
 ## Phân Quyền
 
-### User (Reader) - 5 chức năng
+### User (Reader) - 4 chức năng
 1. **Browse & Search** - Xem/tìm sách
    - View available books
    - Search by title
@@ -21,20 +21,17 @@ Hệ thống quản lý thư viện C++ console với giao diện tiếng Anh, p
    - View by category
    - View popular books (sorted by views)
    
-2. **Manage Reservations** - Đặt trước sách
-   - Reserve a book
-   - View my reservations
+2. **Manage Requests** - Quản lý đặt trước sách
+   - Create a request (đặt trước sách)
+   - View my requests (xem TẤT CẢ đơn đặt trước của tôi - bao gồm Pending, Confirmed, Fulfilled, Cancelled, Expired)
+   - Edit request (sửa thông tin đơn: đổi sách, gia hạn ngày hết hạn - chỉ với trạng thái Pending/Confirmed)
+   - Cancel request (hủy đơn đặt trước - chỉ với trạng thái Pending/Confirmed)
    
-3. **Manage Book Requests** - Yêu cầu sách mới
-   - Submit new book request
-   - View my requests
-   - Cancel a request
-   
-4. **My Profile** - Quản lý hồ sơ cá nhân
+3. **My Profile** - Quản lý hồ sơ cá nhân
    - View profile
    - Update profile (name, email, phone)
    
-5. **Change Password** - Đổi mật khẩu
+4. **Change Password** - Đổi mật khẩu
 
 **⚠️ Bảo mật:** User **không thể** tự mượn/trả/gia hạn sách. Tất cả thao tác mượn/trả sách chỉ có **Librarian** mới thực hiện được.
 
@@ -55,11 +52,12 @@ Hệ thống quản lý thư viện C++ console với giao diện tiếng Anh, p
    - View all orders
    - View active loans
    - View overdue loans
-   
-3. **Manage Requests** - Quản lý yêu cầu sách
-   - View pending requests
-   - Approve request
-   - Reject request
+
+3. **Manage Requests** - Quản lý đơn đặt trước
+   - View all requests (xem tất cả đơn đặt trước của mọi user)
+   - Confirm request (xác nhận đơn đặt trước)
+   - Fulfill request (đáp ứng đơn - sách đã sẵn sàng cho user)
+   - Cancel request (hủy đơn đặt trước)
    
 4. **Generate Reports** - Tạo báo cáo
    - Borrowing report (báo cáo mượn/trả)
@@ -69,11 +67,11 @@ Hệ thống quản lý thư viện C++ console với giao diện tiếng Anh, p
 
 6. **My Profile** - Xem hồ sơ cá nhân
 
-**🔑 Quyền đặc biệt:** Chỉ Librarian mới có quyền cho user mượn sách, nhận trả sách, và gia hạn sách cho user.
+**🔑 Quyền đặc biệt:** Chỉ Librarian mới có quyền cho user mượn sách, nhận trả sách, gia hạn sách cho user, và xử lý các đơn đặt trước (confirm/fulfill/cancel).
 
 ---
 
-### Admin - 6 chức năng (+ tất cả chức năng Librarian & User)
+### Admin - 5 chức năng (+ tất cả chức năng Librarian & User)
 1. **User Management** - Quản lý người dùng
    - Create Librarian account (tạo tài khoản thủ thư)
    - View all users
@@ -112,8 +110,7 @@ LibraryManagementSystem/
 │   ├── users.txt                 # Dữ liệu người dùng
 │   ├── books.txt                 # Dữ liệu sách
 │   ├── orders.txt                # Đơn mượn sách
-│   ├── reservations.txt          # Đặt trước
-│   └── bookrequests.txt          # Yêu cầu sách mới
+│   └── requests.txt              # Đặt trước sách
 │
 ├── UserManagement/
 │   ├── User.h/cpp               # Model User (6 fields, XOR encryption)
@@ -126,8 +123,7 @@ LibraryManagementSystem/
 │
 ├── BorrowingProcess/Models/
 │   ├── Order.h/cpp              # Đơn mượn, tính phí phạt
-│   ├── Reservation.h/cpp        # Đặt trước sách
-│   └── BookRequest.h/cpp        # Yêu cầu sách mới
+│   └── Request.h/cpp            # Đặt trước sách
 │
 └── AdminAndReporting/Reports/
     └── ReportGenerator.h/cpp    # Báo cáo thống kê
@@ -139,7 +135,7 @@ LibraryManagementSystem/
 
 ```bash
 # Compile
-g++ -std=c++11 -o LibraryManagement.exe main.cpp UserManagement/User.cpp UserManagement/Services/UserService.cpp BookManagement/Book.cpp BookManagement/Library.cpp BorrowingProcess/Models/Order.cpp BorrowingProcess/Models/Reservation.cpp BorrowingProcess/Models/BookRequest.cpp AdminAndReporting/Reports/ReportGenerator.cpp
+g++ -std=c++11 -o LibraryManagement.exe main.cpp UserManagement/User.cpp UserManagement/Services/UserService.cpp BookManagement/Book.cpp BookManagement/Library.cpp BorrowingProcess/Models/Order.cpp BorrowingProcess/Models/Request.cpp AdminAndReporting/Reports/ReportGenerator.cpp
 
 # Run
 .\LibraryManagement.exe
@@ -205,7 +201,7 @@ Hệ thống tự tạo 3 tài khoản mẫu khi chạy lần đầu:
 - **Giao diện:** Console (tiếng Anh)
 - **Comment:** Tiếng Việt
 - **Kiến trúc:** OOP, Service Layer Pattern
-- **Lưu trữ:** 5 file text (users, books, orders, reservations, bookrequests)
+- **Lưu trữ:** 4 file text (users, books, orders, requests)
 - **Bảo mật:** 
   - XOR password encryption
   - User không thể tự mượn/trả/gia hạn sách (chỉ Librarian)
@@ -222,16 +218,15 @@ Hệ thống **tự động lưu** dữ liệu ngay sau các thao tác:
 - ✅ Đăng ký user mới
 - ✅ Thêm/sửa/xóa sách
 - ✅ Mượn/trả/gia hạn sách (Librarian issue book, process return, renew loan)
-- ✅ Đặt trước/yêu cầu sách (reserve, submit request, cancel request)
-- ✅ Duyệt/từ chối yêu cầu (Librarian approve/reject)
+- ✅ Đặt trước sách (reserve)
 - ✅ Cập nhật profile/password
 - ✅ Kích hoạt/vô hiệu user
 
-→ **Không cần save thủ công**, data được persist tự động vào 5 file .txt
+→ **Không cần save thủ công**, data được persist tự động vào 4 file .txt
 
 ## Known Issues
 
-- **Duplicate reservations**: Hệ thống hiện cho phép user đặt trước cùng 1 cuốn sách nhiều lần 
+- **Duplicate requests**: Hệ thống hiện cho phép user đặt trước cùng 1 cuốn sách nhiều lần 
 - **Book status**: Sách với quantity=0 tự động chuyển sang trạng thái "Borrowed"
 - **Docker incompatibility**: Console app không chạy ổn định trong Docker (input/output errors, infinite menu loop)
 
@@ -243,5 +238,5 @@ Hệ thống **tự động lưu** dữ liệu ngay sau các thao tác:
 
 ---
 
-**Version:** 2.4 (Docker support + Documentation update)  
-**Updated:** 20/11/2025
+**Version:** 2.6 (Renamed Reservation to Request + added Edit/Delete request functionality)  
+**Updated:** 27/11/2025

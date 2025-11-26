@@ -24,8 +24,7 @@ RUN mkdir -p database
 COPY database/users.txt ./database/
 COPY database/books.txt ./database/
 COPY database/orders.txt ./database/
-COPY database/reservations.txt ./database/
-COPY database/bookrequests.txt ./database/
+COPY database/requests.txt ./database/
 
 # Compile the application
 RUN g++ -std=c++11 \
@@ -35,8 +34,7 @@ RUN g++ -std=c++11 \
     BookManagement/Book.cpp \
     BookManagement/Library.cpp \
     BorrowingProcess/Models/Order.cpp \
-    BorrowingProcess/Models/Reservation.cpp \
-    BorrowingProcess/Models/BookRequest.cpp \
+    BorrowingProcess/Models/Request.cpp \
     AdminAndReporting/Reports/ReportGenerator.cpp \
     -o LibraryManagement
 

@@ -1,6 +1,6 @@
 ﻿// File main - chương trình quản lý thư viện
 // Xử lý login, menu chính và điều hướng theo role
-// Quản lý: User, Book, Order, Reservation, BookRequest
+// Quản lý: User, Book, Order, Request
 
 #include <iostream>
 #include <fstream>
@@ -16,26 +16,23 @@
 #include "BookManagement/Library.h"
 #include "BookManagement/Book.h"
 #include "BorrowingProcess/Models/Order.h"
-#include "BorrowingProcess/Models/Reservation.h"
-#include "BorrowingProcess/Models/BookRequest.h"
+#include "BorrowingProcess/Models/Request.h"
 #include "AdminAndReporting/Reports/ReportGenerator.h"
 
 using namespace std;
 
 // Biến toàn cục - lưu data trong runtime
 vector<Order> orders;
-vector<Reservation> reservations;
-vector<BookRequest> bookRequests;
+vector<Request> requests;
 int nextOrderId = 1;
-int nextReservationId = 1;
 int nextRequestId = 1;
 
 // Hàm tự động lưu file sau mỗi thao tác
 void autoSave(Library& library, UserService& userService) {
-    library.saveToFile("books.txt");
-    userService.saveToFile("users.txt");
+    library.saveToFile("database/books.txt");
+    userService.saveToFile("database/users.txt");
     
-    ofstream ordersFile("orders.txt");
+    ofstream ordersFile("database/orders.txt");
     if (ordersFile.is_open()) {
         for (const Order& order : orders) {
             ordersFile << order.getOrderId() << "|"
@@ -52,27 +49,15 @@ void autoSave(Library& library, UserService& userService) {
         ordersFile.close();
     }
     
-    ofstream reservationsFile("database/reservations.txt");
-    if (reservationsFile.is_open()) {
-        for (const Reservation& res : reservations) {
-            reservationsFile << res.getReservationId() << "|"
-                           << res.getUserId() << "|"
-                           << res.getBookId() << "|"
-                           << res.statusToString() << "|"
-                           << res.getReservationDate() << "\n";
-        }
-        reservationsFile.close();
-    }
-    
-    ofstream requestsFile("database/bookrequests.txt");
+    ofstream requestsFile("database/requests.txt");
     if (requestsFile.is_open()) {
-        for (const BookRequest& req : bookRequests) {
+        for (const Request& req : requests) {
             requestsFile << req.getRequestId() << "|"
-                        << req.getUserId() << "|"
-                        << req.getBookTitle() << "|"
-                        << req.getBookAuthor() << "|"
-                        << req.statusToString() << "|"
-                        << req.getRequestDate() << "\n";
+                           << req.getUserId() << "|"
+                           << req.getBookId() << "|"
+                           << req.statusToString() << "|"
+                           << req.getRequestDate() << "|"
+                           << req.getExpiryDate() << "\n";
         }
         requestsFile.close();
     }
@@ -116,58 +101,27 @@ void loadOrders() {
     }
 }
 
-// Đọc dữ liệu reservations từ file
-void loadReservations() {
-    ifstream reservationsFile("database/reservations.txt");
-    if (reservationsFile.is_open()) {
-        string line;
-        while (getline(reservationsFile, line)) {
-            if (line.empty()) continue; // Skip empty lines
-            
-            stringstream ss(line);
-            string resId, userId, bookId, statusStr, resDate;
-            
-            getline(ss, resId, '|');
-            getline(ss, userId, '|');
-            getline(ss, bookId, '|');
-            getline(ss, statusStr, '|');
-            getline(ss, resDate);
-            
-            Reservation res(resId, userId, bookId, resDate, "");
-            res.setStatus(Reservation::stringToStatus(statusStr));
-            reservations.push_back(res);
-            
-            // Update nextReservationId
-            if (!resId.empty() && resId.length() > 3 && resId[0] == 'R') {
-                int id = stoi(resId.substr(3)); // "RES1" -> skip "RES", get "1"
-                if (id >= nextReservationId) nextReservationId = id + 1;
-            }
-        }
-        reservationsFile.close();
-    }
-}
-
-// Đọc dữ liệu book requests từ file
-void loadBookRequests() {
-    ifstream requestsFile("database/bookrequests.txt");
+// Đọc dữ liệu requests từ file
+void loadRequests() {
+    ifstream requestsFile("database/requests.txt");
     if (requestsFile.is_open()) {
         string line;
         while (getline(requestsFile, line)) {
             if (line.empty()) continue; // Skip empty lines
             
             stringstream ss(line);
-            string reqId, userId, bookTitle, author, statusStr, reqDate;
+            string reqId, userId, bookId, statusStr, reqDate, expDate;
             
             getline(ss, reqId, '|');
             getline(ss, userId, '|');
-            getline(ss, bookTitle, '|');
-            getline(ss, author, '|');
+            getline(ss, bookId, '|');
             getline(ss, statusStr, '|');
-            getline(ss, reqDate);
+            getline(ss, reqDate, '|');
+            getline(ss, expDate);
             
-            BookRequest req(reqId, userId, bookTitle, author, "", reqDate);
-            req.setStatus(BookRequest::stringToStatus(statusStr));
-            bookRequests.push_back(req);
+            Request req(reqId, userId, bookId, reqDate, expDate);
+            req.setStatus(Request::stringToStatus(statusStr));
+            requests.push_back(req);
             
             // Update nextRequestId
             if (!reqId.empty() && reqId.length() > 3 && reqId[0] == 'R') {
@@ -227,10 +181,9 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
     while (running) {
         cout << "\n========== USER MENU (" << currentUser->getName() << ") ==========\n";
         cout << "1. Browse & Search books\n";
-        cout << "2. Manage reservations\n";
-        cout << "3. Manage book requests\n";
-        cout << "4. My profile\n";
-        cout << "5. Change password\n";
+        cout << "2. Manage requests\n";
+        cout << "3. My profile\n";
+        cout << "4. Change password\n";
         cout << "0. Logout\n";
         cout << "Enter choice: ";
         
@@ -294,9 +247,11 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
         }
         
         case 2: { // Quản lý đặt trước
-            cout << "\n--- Manage Reservations ---\n";
-            cout << "1. Reserve a book\n";
-            cout << "2. View my reservations\n";
+            cout << "\n--- Manage Requests ---\n";
+            cout << "1. Create a request\n";
+            cout << "2. View my requests\n";
+            cout << "3. Edit request\n";
+            cout << "4. Cancel request\n";
             cout << "0. Back\n";
             cout << "Choice: ";
             
@@ -305,77 +260,31 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             
             if (subChoice == 1) { // Đặt trước sách
-                string bookId = prompt("Enter Book ID to reserve: ");
+                string bookId = prompt("Enter Book ID to request: ");
                 Book* book = library.findBookById(bookId);
                 
                 if (!book) {
                     cout << "Book not found!\n";
                 } else {
-                    string reservationId = "RES" + toString(nextReservationId++);
+                    string requestId = "REQ" + toString(nextRequestId++);
                     string userId = toString(currentUser->getId());
-                    string reservationDate = getCurrentDate();
+                    string requestDate = getCurrentDate();
                     string expiryDate = calculateDueDate(7);
                     
-                    Reservation newReservation(reservationId, userId, bookId, reservationDate, expiryDate);
-                    reservations.push_back(newReservation);
+                    Request newRequest(requestId, userId, bookId, requestDate, expiryDate);
+                    requests.push_back(newRequest);
                     autoSave(library, userService);
                     
-                    cout << "Book reserved successfully!\n";
-                    cout << "Reservation ID: " << reservationId << "\n";
+                    cout << "Book request created successfully!\n";
+                    cout << "Request ID: " << requestId << "\n";
                     cout << "Expiry date: " << expiryDate << "\n";
                 }
             } else if (subChoice == 2) { // Xem danh sách đặt trước
                 string userId = toString(currentUser->getId());
-                cout << "\n--- My Reservations ---\n";
+                cout << "\n--- My Requests ---\n";
                 bool found = false;
                 
-                for (const auto &reservation : reservations) {
-                    if (reservation.getUserId() == userId) {
-                        reservation.displayReservationInfo();
-                        cout << "---\n";
-                        found = true;
-                    }
-                }
-                
-                if (!found) cout << "No reservations found.\n";
-            }
-            break;
-        }
-        
-        case 3: { // Quản lý yêu cầu sách
-            cout << "\n--- Manage Book Requests ---\n";
-            cout << "1. Submit new book request\n";
-            cout << "2. View my requests\n";
-            cout << "3. Cancel a request\n";
-            cout << "0. Back\n";
-            cout << "Choice: ";
-            
-            int subChoice;
-            cin >> subChoice;
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            
-            if (subChoice == 1) { // Yêu cầu sách mới
-                string title = prompt("Book title: ");
-                string author = prompt("Author: ");
-                string isbn = prompt("ISBN (optional): ");
-                string reason = prompt("Reason for request (optional): ");
-                
-                string requestId = "REQ" + toString(nextRequestId++);
-                string userId = toString(currentUser->getId());
-                string requestDate = getCurrentDate();
-                
-                BookRequest newRequest(requestId, userId, title, author, isbn, requestDate, reason);
-                bookRequests.push_back(newRequest);
-                autoSave(library, userService);
-                
-                cout << "Book request submitted successfully!\n";
-                cout << "Request ID: " << requestId << "\n";
-            } else if (subChoice == 2) { // Xem yêu cầu của tôi
-                string userId = toString(currentUser->getId());
-                cout << "\n--- My Book Requests ---\n";
-                bool found = false;
-                
-                for (const auto &request : bookRequests) {
+                for (const auto &request : requests) {
                     if (request.getUserId() == userId) {
                         request.displayRequestInfo();
                         cout << "---\n";
@@ -384,33 +293,99 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
                 }
                 
                 if (!found) cout << "No requests found.\n";
-            } else if (subChoice == 3) { // Hủy yêu cầu
-                string requestId = prompt("Enter Request ID to cancel: ");
-                bool found = false;
+            } else if (subChoice == 3) { // Sửa đơn đặt trước
+                string userId = toString(currentUser->getId());
+                string requestId = prompt("Enter Request ID to edit: ");
                 
-                for (auto &request : bookRequests) {
-                    if (request.getRequestId() == requestId && 
-                        request.getUserId() == toString(currentUser->getId())) {
+                bool found = false;
+                for (auto &request : requests) {
+                    if (request.getRequestId() == requestId && request.getUserId() == userId) {
+                        found = true;
                         
-                        if (request.getStatus() == RequestStatus::Pending) {
-                            request.cancelRequest();
+                        // Only allow editing if request is still Pending or Confirmed
+                        if (request.getStatus() != RequestStatus::Pending && 
+                            request.getStatus() != RequestStatus::Confirmed) {
+                            cout << "Cannot edit this request (status: " << request.statusToString() << ")\n";
+                            break;
+                        }
+                        
+                        cout << "\nCurrent request details:\n";
+                        request.displayRequestInfo();
+                        
+                        cout << "\nWhat would you like to update?\n";
+                        cout << "1. Change book\n";
+                        cout << "2. Extend expiry date\n";
+                        cout << "0. Cancel\n";
+                        cout << "Choice: ";
+                        
+                        int editChoice;
+                        cin >> editChoice;
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                        
+                        if (editChoice == 1) {
+                            string newBookId = prompt("Enter new Book ID: ");
+                            Book* book = library.findBookById(newBookId);
+                            
+                            if (!book) {
+                                cout << "Book not found!\n";
+                            } else {
+                                request.setBookId(newBookId);
+                                autoSave(library, userService);
+                                cout << "Book changed successfully!\n";
+                            }
+                        } else if (editChoice == 2) {
+                            string newExpiryDate = calculateDueDate(14); // Extend by 14 days
+                            request.setExpiryDate(newExpiryDate);
                             autoSave(library, userService);
-                            cout << "Request cancelled successfully!\n";
-                            found = true;
-                        } else {
-                            cout << "Cannot cancel this request (already processed).\n";
-                            found = true;
+                            cout << "Expiry date extended to: " << newExpiryDate << "\n";
                         }
                         break;
                     }
                 }
                 
-                if (!found) cout << "Request not found!\n";
+                if (!found) cout << "Request not found or you don't have permission to edit it.\n";
+                
+            } else if (subChoice == 4) { // Hủy đơn đặt trước
+                string userId = toString(currentUser->getId());
+                string requestId = prompt("Enter Request ID to cancel: ");
+                
+                bool found = false;
+                for (auto &request : requests) {
+                    if (request.getRequestId() == requestId && request.getUserId() == userId) {
+                        found = true;
+                        
+                        // Only allow canceling if request is still Pending or Confirmed
+                        if (request.getStatus() != RequestStatus::Pending && 
+                            request.getStatus() != RequestStatus::Confirmed) {
+                            cout << "Cannot cancel this request (status: " << request.statusToString() << ")\n";
+                            break;
+                        }
+                        
+                        cout << "\nRequest details:\n";
+                        request.displayRequestInfo();
+                        
+                        cout << "\nAre you sure you want to cancel this request? (y/n): ";
+                        char confirm;
+                        cin >> confirm;
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                        
+                        if (confirm == 'y' || confirm == 'Y') {
+                            request.cancelRequest();
+                            autoSave(library, userService);
+                            cout << "Request cancelled successfully!\n";
+                        } else {
+                            cout << "Cancellation aborted.\n";
+                        }
+                        break;
+                    }
+                }
+                
+                if (!found) cout << "Request not found or you don't have permission to cancel it.\n";
             }
             break;
         }
         
-        case 4: { // Xem & cập nhật hồ sơ
+        case 3: { // Xem & cập nhật hồ sơ
             cout << "\n--- My Profile ---\n";
             currentUser->displayUserInfo();
             cout << "\nDo you want to update profile? (y/n): ";
@@ -772,11 +747,12 @@ void librarianMenu(User* currentUser, Library &library, UserService &userService
             break;
         }
         
-        case 3: { // Quản lý yêu cầu sách
+        case 3: { // Quản lý Requests (Đơn đặt trước)
             cout << "\n--- Manage Requests ---\n";
-            cout << "1. View pending book requests\n";
-            cout << "2. Approve book request\n";
-            cout << "3. Reject book request\n";
+            cout << "1. View all requests\n";
+            cout << "2. Confirm request\n";
+            cout << "3. Fulfill request\n";
+            cout << "4. Cancel request\n";
             cout << "0. Back\n";
             cout << "Choice: ";
             
@@ -784,46 +760,84 @@ void librarianMenu(User* currentUser, Library &library, UserService &userService
             cin >> subChoice;
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             
-            if (subChoice == 1) { // Xem yêu cầu đang chờ
-                cout << "\n--- Pending Book Requests ---\n";
-                bool found = false;
-                
-                for (const auto &request : bookRequests) {
-                    if (request.getStatus() == RequestStatus::Pending) {
+            if (subChoice == 1) { // Xem tất cả requests
+                cout << "\n--- All Requests ---\n";
+                if (requests.empty()) {
+                    cout << "No requests found.\n";
+                } else {
+                    for (const auto &request : requests) {
                         request.displayRequestInfo();
                         cout << "---\n";
-                        found = true;
                     }
                 }
-                
-                if (!found) cout << "No pending requests.\n";
-            } else if (subChoice == 2) { // Duyệt yêu cầu
-                string requestId = prompt("Enter Request ID to approve: ");
+            } else if (subChoice == 2) { // Xác nhận request
+                string requestId = prompt("Enter Request ID to confirm: ");
                 bool found = false;
                 
-                for (auto &request : bookRequests) {
+                for (auto &request : requests) {
                     if (request.getRequestId() == requestId) {
-                        string notes = prompt("Approval notes (optional): ");
-                        request.approveRequest(getCurrentDate(), notes);
-                        autoSave(library, userService);
-                        cout << "Request approved!\n";
                         found = true;
+                        
+                        if (request.getStatus() == RequestStatus::Pending) {
+                            request.confirmRequest();
+                            autoSave(library, userService);
+                            cout << "Request confirmed successfully!\n";
+                        } else {
+                            cout << "Cannot confirm request (current status: " << request.statusToString() << ")\n";
+                        }
                         break;
                     }
                 }
                 
                 if (!found) cout << "Request not found!\n";
-            } else if (subChoice == 3) { // Từ chối yêu cầu
-                string requestId = prompt("Enter Request ID to reject: ");
+                
+            } else if (subChoice == 3) { // Fulfill request (đáp ứng - sách đã sẵn sàng)
+                string requestId = prompt("Enter Request ID to fulfill: ");
                 bool found = false;
                 
-                for (auto &request : bookRequests) {
+                for (auto &request : requests) {
                     if (request.getRequestId() == requestId) {
-                        string notes = prompt("Rejection reason: ");
-                        request.rejectRequest(notes);
-                        autoSave(library, userService);
-                        cout << "Request rejected!\n";
                         found = true;
+                        
+                        if (request.getStatus() == RequestStatus::Pending || 
+                            request.getStatus() == RequestStatus::Confirmed) {
+                            request.fulfill();
+                            request.setFulfillmentDate(getCurrentDate());
+                            autoSave(library, userService);
+                            cout << "Request fulfilled successfully!\n";
+                            cout << "Please issue the book to the user.\n";
+                        } else {
+                            cout << "Cannot fulfill request (current status: " << request.statusToString() << ")\n";
+                        }
+                        break;
+                    }
+                }
+                
+                if (!found) cout << "Request not found!\n";
+                
+            } else if (subChoice == 4) { // Cancel request
+                string requestId = prompt("Enter Request ID to cancel: ");
+                bool found = false;
+                
+                for (auto &request : requests) {
+                    if (request.getRequestId() == requestId) {
+                        found = true;
+                        
+                        cout << "\nRequest details:\n";
+                        request.displayRequestInfo();
+                        
+                        cout << "\nAre you sure you want to cancel this request? (y/n): ";
+                        char confirm;
+                        cin >> confirm;
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                        
+                        if (confirm == 'y' || confirm == 'Y') {
+                            request.cancelRequest();
+                            autoSave(library, userService);
+                            cout << "Request cancelled successfully!\n";
+                        } else {
+                            cout << "Cancellation aborted.\n";
+                        }
                         break;
                     }
                 }
@@ -1093,8 +1107,7 @@ int main() {
         bool dataLoaded = userService.loadFromFile("database/users.txt");
         library.loadFromFile("database/books.txt");
         loadOrders();
-        loadReservations();
-        loadBookRequests();
+        loadRequests();
         
     
     // Nếu chưa có dữ liệu, tạo sample accounts
