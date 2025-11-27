@@ -21,7 +21,6 @@ Book::Book(const string& bookId, const string& title, const string& author,
       briefDescription(briefDesc), detailedDescription(detailedDesc),
       viewCount(0), rentalPrice(rentalPrice),
       status(BookStatus::Available), condition(BookCondition::Good) {
-    // Cập nhật status dựa trên số lượng thực tế
     updateStatus();
 }
 

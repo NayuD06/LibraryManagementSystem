@@ -12,23 +12,23 @@ enum class BookCondition { Excellent, Good, Fair, Poor, Damaged, Lost };
 
 class Book {
 private:
-    string bookId;              // Unique book ID
+    string bookId;              
     string title;
     string author;
     string publisher;
     int yearOfPublication;
     string ISBN;
-    vector<string> categories;  // Can belong to multiple categories
+    vector<string> categories;  
     vector<string> keywords;
-    int totalQuantity;          // Total number of copies
-    int availableQuantity;      // Available copies
+    int totalQuantity;          
+    int availableQuantity;      
     int totalPages;
     string briefDescription;
     string detailedDescription;
     BookStatus status;
     BookCondition condition;
-    int viewCount;              // Number of views
-    double rentalPrice;         // Giá thuê/ngày (dùng cho phí phạt)
+    int viewCount;             
+    double rentalPrice;         
 
 public:
     // Constructors
@@ -76,12 +76,11 @@ public:
     // Book operations
     void displayBookInfo() const;
     void displayDetailedInfo() const;
-    void updateStatus();                    // Auto-update status based on availability
+    void updateStatus();                    
     bool isAvailable() const;
-    void decreaseAvailableQuantity();       // When borrowed
-    void increaseAvailableQuantity();       // When returned
-    void incrementViewCount();              // Track popularity
-    
+    void decreaseAvailableQuantity();       
+    void increaseAvailableQuantity();       
+    void incrementViewCount();              
     // Status management
     string statusToString() const;
     string conditionToString() const;

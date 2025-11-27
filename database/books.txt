@@ -1,10 +1,10 @@
-B00001|The Great Gatsby|F. Scott Fitzgerald|Scribner|1925|9780743273565|Fiction|Classic American novel|10|7|15000|Lavish parties and tragic love|New York, 1920s|Available|Good|156|250000
+B00001|The Great Gatsby|F. Scott Fitzgerald|Scribner|1925|9780743273565|Fiction|Classic American novel|10|8|15000|Lavish parties and tragic love|New York, 1920s|Available|Good|156|250000
 B00002|To Kill a Mockingbird|Harper Lee|J.B. Lippincott|1960|9780061120084|Fiction|Coming-of-age story about racial injustice|8|5|12000|Scout Finch's childhood in Depression-era South|Alabama courtroom drama|Available|Good|203|280000
 B00003|1984|George Orwell|Secker & Warburg|1949|9780451524935|Science Fiction|Dystopian social science fiction|12|8|18000|Big Brother is watching you|Totalitarian surveillance state|Available|Good|328|300000
 B00004|Pride and Prejudice|Jane Austen|T. Egerton|1813|9780141439518|Romance|Classic romance and social commentary|6|4|10000|Elizabeth Bennet and Mr. Darcy|English countryside estates|Available|Good|279|220000
 B00005|The Catcher in the Rye|J.D. Salinger|Little Brown|1951|9780316769174|Fiction|Teenage angst and alienation|5|3|14000|Holden Caulfield's journey|New York City|Available|Good|234|260000
 B00006|Harry Potter and the Philosopher's Stone|J.K. Rowling|Bloomsbury|1997|9780747532699|Fantasy|Young wizard discovers his destiny|15|10|20000|Boy who lived|Hogwarts School of Witchcraft|Available|Good|445|350000
 B00007|The Hobbit|J.R.R. Tolkien|George Allen & Unwin|1937|9780547928227|Fantasy|Adventure in Middle-earth|10|6|16000|There and back again|Bilbo's unexpected journey|Available|Good|310|320000
-B00008|The Da Vinci Code|Dan Brown|Doubleday|2003|9780385504201|Thriller|Mystery thriller about religious conspiracy|8|0|15000|Robert Langdon's investigation|Paris and London|Borrowed|Good|489|290000
+B00008|The Da Vinci Code|Dan Brown|Doubleday|2003|9780385504201|Thriller|Mystery thriller about religious conspiracy|8|1|15000|Robert Langdon's investigation|Paris and London|Available|Good|489|290000
 B00009|The Alchemist|Paulo Coelho|HarperOne|1988|9780062315007|Fiction|Philosophical novel about following dreams|12|9|13000|Santiago's journey to find treasure|Andalusian shepherd's quest|Available|Good|197|240000
 B00010|Introduction to Algorithms|Thomas H. Cormen|MIT Press|2009|9780262033848|Computer Science|Comprehensive guide to algorithms|5|3|25000|CLRS textbook|Algorithm design and analysis|Available|Good|1312|850000

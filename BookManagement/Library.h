@@ -47,13 +47,13 @@ public:
     vector<Book*> searchByAuthor(const string& authorName);
     vector<Book*> searchByKeyword(const string& keyword);
     vector<Book*> filterByCategory(const string& category);
-    vector<Book*> searchBooks(const string& query); // General search
+    vector<Book*> searchBooks(const string& query); 
     
     // View and Display
     void displayAllBooks() const;
     void displayBooksByCategory() const;
     void displayBooksByAuthor() const;
-    vector<Book*> sortByPopularity(); // Sort by view count
+    vector<Book*> sortByPopularity(); 
     
     // Data Management
     const vector<Book>& getAllBooks() const;

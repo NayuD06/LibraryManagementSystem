@@ -116,22 +116,16 @@ int Order::calculateOverdueDays() const {
 	return (diffDays > 0) ? diffDays : 0;
 }
 
-double Order::calculateFine(double dailyFineRate) const {
-	double totalFine = 0.0;
-	
-	// Phí phạt quá hạn
-	int overdueDays = calculateOverdueDays();
-	if (overdueDays > 0) {
-		totalFine += overdueDays * dailyFineRate;
-	}
-	
-	// Phí đền bù nếu sách hỏng/mất (ước tính giá sách = 100 * rentalPrice)
-	double estimatedBookValue = dailyFineRate * 100; // Giả định giá sách = 100 ngày thuê
-	if (bookCondition == "DAMAGED") {
-		totalFine += estimatedBookValue * 0.5; // 50% giá sách nếu hỏng
-	} else if (bookCondition == "LOST") {
-		totalFine += estimatedBookValue; // 100% giá sách nếu mất
-	}
-	
-	return totalFine;
+double Order::calculateFine(double dailyFineRate, double bookPrice) const {
+    double totalFine = 0.0;
+    int overdueDays = calculateOverdueDays();
+    if (overdueDays > 0) {
+        totalFine += overdueDays * dailyFineRate;
+    }
+    if (bookCondition == "DAMAGED") {
+        totalFine += bookPrice * 0.5;
+    } else if (bookCondition == "LOST") {
+        totalFine += bookPrice;
+    }
+    return totalFine;
 }
