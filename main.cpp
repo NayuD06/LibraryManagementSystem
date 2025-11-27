@@ -409,7 +409,7 @@ void readerMenu(User* currentUser, Library &library, UserService &userService) {
             break;
         }
         
-        case 5: { // Đổi mật khẩu
+        case 4: { // Đổi mật khẩu
             string oldPassword = prompt("Old password: ");
             string newPassword = prompt("New password: ");
             
@@ -635,8 +635,10 @@ void librarianMenu(User* currentUser, Library &library, UserService &userService
                                 book->increaseAvailableQuantity();
                                 autoSave(library, userService);
                                 
-                                double fine = order.calculateFine(book->getRentalPrice());
-                                double estimatedBookValue = book->getRentalPrice() * 100;
+                                // Tính phí phạt: (số ngày quá hạn × phí/ngày) + đền bù sách (nếu hỏng/mất)
+                                double dailyFineRate = book->getRentalPrice(); // Phí phạt mỗi ngày quá hạn
+                                double bookPrice = book->getRentalPrice() * 50; // Giá sách ước tính (50 lần giá thuê)
+                                double fine = order.calculateFine(dailyFineRate, bookPrice);
                                 
                                 cout << "\n=== Return Summary ===\n";
                                 cout << "Book return processed successfully!\n";
@@ -647,13 +649,13 @@ void librarianMenu(User* currentUser, Library &library, UserService &userService
                                     int overdueDays = order.calculateOverdueDays();
                                     if (overdueDays > 0) {
                                         cout << "Overdue days: " << overdueDays << "\n";
-                                        cout << "Daily fine rate: " << book->getRentalPrice() << " VND\n";
-                                        cout << "Overdue fine: " << (overdueDays * book->getRentalPrice()) << " VND\n";
+                                        cout << "Daily fine rate: " << dailyFineRate << " VND\n";
+                                        cout << "Overdue fine: " << (overdueDays * dailyFineRate) << " VND\n";
                                     }
                                     if (condition == "DAMAGED") {
-                                        cout << "Damaged book compensation (50%): " << (estimatedBookValue * 0.5) << " VND\n";
+                                        cout << "Damaged book compensation (50%): " << (bookPrice * 0.5) << " VND\n";
                                     } else if (condition == "LOST") {
-                                        cout << "Lost book compensation (100%): " << estimatedBookValue << " VND\n";
+                                        cout << "Lost book compensation (100%): " << bookPrice << " VND\n";
                                     }
                                     cout << "-------------------\n";
                                     cout << "TOTAL FINE: " << fine << " VND\n";

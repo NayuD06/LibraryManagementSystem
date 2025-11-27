@@ -1,18 +1,3 @@
-// ===== ORDER MODEL =====
-// Lớp đại diện cho một đơn mượn sách
-// Theo Class Diagram và Functional Requirements
-// Attributes:
-// - orderId: Mã đơn mượn duy nhất
-// - userId: Mã người mượn
-// - bookId: Mã sách
-// - status: Trạng thái (PENDING/ISSUED/RETURNED/OVERDUE/RESERVED)
-// - borrowDate: Ngày đăng ký mượn
-// - issueDate: Ngày cho mượn thực tế
-// - dueDate: Ngày hạn trả
-// - returnDate: Ngày trả thực tế
-// - renewalPeriod: Số lần gia hạn
-// - bookCondition: Tình trạng sách khi trả (GOOD/DAMAGED/LOST)
-
 #pragma once
 
 #include <string>
@@ -70,5 +55,5 @@ public:
 	void displayOrderInfo() const;
 	bool isOverdue() const;
 	int calculateOverdueDays() const;
-	double calculateFine(double dailyFineRate) const;
+	double calculateFine(double dailyFineRate, double bookPrice) const;
 };
