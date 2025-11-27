@@ -54,6 +54,7 @@ public:
 	// Helper methods
 	void displayOrderInfo() const;
 	bool isOverdue() const;
+	void checkAndUpdateOverdueStatus(); 
 	int calculateOverdueDays() const;
 	double calculateFine(double dailyFineRate, double bookPrice) const;
 };

@@ -714,10 +714,12 @@ void librarianMenu(User* currentUser, Library &library, UserService &userService
                 if (orders.empty()) {
                     cout << "No orders found.\n";
                 } else {
-                    for (const auto &order : orders) {
+                    for (auto &order : orders) {
+                        order.checkAndUpdateOverdueStatus(); // Kiểm tra và cập nhật OVERDUE
                         order.displayOrderInfo();
                         cout << "---\n";
                     }
+                    autoSave(library, userService); // Lưu sau khi cập nhật status
                 }
             } else if (subChoice == 5) { // Xem đơn mượn đang hoạt động
                 cout << "\n--- Active Loans ---\n";
