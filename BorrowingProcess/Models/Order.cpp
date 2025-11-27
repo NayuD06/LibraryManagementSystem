@@ -84,6 +84,38 @@ bool Order::isOverdue() const {
 	return status == "OVERDUE";
 }
 
+void Order::checkAndUpdateOverdueStatus() {
+	// Chỉ kiểm tra nếu đơn đang ISSUED (chưa trả)
+	if (status != "ISSUED") return;
+	
+	// Lấy ngày hiện tại
+	time_t now = time(0);
+	tm* nowTm = localtime(&now);
+	char currentDate[20];
+	sprintf(currentDate, "%04d-%02d-%02d", 
+		nowTm->tm_year + 1900, nowTm->tm_mon + 1, nowTm->tm_mday);
+	
+	// Parse ngày hạn trả (dueDate)
+	if (dueDate.empty()) return;
+	
+	int dueYear, dueMonth, dueDay;
+	sscanf(dueDate.c_str(), "%d-%d-%d", &dueYear, &dueMonth, &dueDay);
+	
+	tm dueTm = {0};
+	dueTm.tm_year = dueYear - 1900;
+	dueTm.tm_mon = dueMonth - 1;
+	dueTm.tm_mday = dueDay;
+	
+	// So sánh ngày hiện tại với ngày hạn trả
+	time_t dueTime = mktime(&dueTm);
+	double diffSeconds = difftime(now, dueTime);
+	
+	// Nếu quá hạn (diffSeconds > 0), cập nhật status
+	if (diffSeconds > 0) {
+		status = "OVERDUE";
+	}
+}
+
 int Order::calculateOverdueDays() const {
 	// Tính số ngày quá hạn
 	if (returnDate.empty() || dueDate.empty()) return 0;
